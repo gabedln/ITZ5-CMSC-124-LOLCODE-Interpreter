@@ -78,13 +78,13 @@ def getLexemes(code): # functions for getting lexemes
 
                     if re.match(r'^-?[0-9]+$', token):           # number literal
                         lexical_table.append([token, "NUMBR Literal"])
-                    elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token):  # varident
-                        lexical_table.append([token, "Variable Identifier"])
+                    elif re.match(r'^(WIN|FAIL)$', token):
+                        lexical_table.append([token, "TROOF Literal"])
                     elif re.match(r'^-?[0-9]+\.[0-9]+$', token):
                         lexical_table.append([token, "NUMBAR Literal"])
                     # (YARN strings are handled before this block — no branch needed here)
-                    elif re.match(r'^(WIN|FAIL)$', token):
-                        lexical_table.append([token, "TROOF Literal"])
+                    elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token):  # varident
+                        lexical_table.append([token, "Variable Identifier"])
                     elif re.match(r'^(TROOF|NOOB|NUMBR|NUMBAR|YARN)$', token):
                         lexical_table.append([token, "TYPE"])            
                     else:
@@ -95,14 +95,12 @@ def getLexemes(code): # functions for getting lexemes
         lexical_table.append([pl_element[1][0], pl_element[1][2]]) # appends KTHXBYE
 
     else: # else for initial if ; no HAI or no KTHXBYE (not at beginning or end) results in an error
-        return "Error: Code must start with HAI and end with KTHXBYE"
+        return None
 
     # ----- printing the lexical table --------------
     print("\n-----------Lexical Table----------")
     for line in lexical_table:
         print(f"{line[0]:<10} | {line[1]}")
     print("----------------------------------")
+    print(lexical_table)
     return lexical_table
-    
-getLexemes(code)
-getLexemes(code2)
