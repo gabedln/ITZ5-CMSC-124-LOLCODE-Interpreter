@@ -14,7 +14,7 @@
 | NUMBAR Literal | `^-?[0-9]+\.[0-9]+\$` | 
 | YARN Literal | `" *"\$` | 
 | TROOF Literal | `^(WIN|FAIL)\$` | 
-| TYPE Literal | `^(TROOF|NOOB|NUMBR|NUMBAR|YARN|BUKKIT)\$` | 
+| TYPE Literal | `^(TROOF|NOOB|NUMBR|NUMBAR|YARN)\$` | 
 
 ## KEYWORDS
 
