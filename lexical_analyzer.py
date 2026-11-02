@@ -30,9 +30,13 @@ code = """HAI
     KTHXBYE"""
 
 # ------------- example code 2 ---------
-code2 = """HAI
+code2 = """BTW this is a comment too
+    HAI BTW this is a comment
     I HAS A var ITZ 12
     VISIBLE "noot noot" var
+    OBTW
+    in line comment
+    TLDR
     KTHXBYE"""
 
 # ------------- example code 3 (with comments) ---------
@@ -80,7 +84,8 @@ def stripComments(code):
         if match: # if may nahanap tayong BTW sa line, we will only pass the part before it to the clean_lines list
             stripped_line = stripped_line[:match.start()].strip() # remove comment part
 
-        clean_lines.append(stripped_line) # add the cleaned line to the list
+        if stripped_line: # if the stripped line is not empty, we add it to the clean_lines list
+            clean_lines.append(stripped_line) # add the cleaned line to the list
 
     if obtw_tldr == True: # kapag TRUE parin siya even after, ibig sabihin hindi na close so syntax error
         print("Syntax Error: Unclosed comment block (OBTW without TLDR)")
