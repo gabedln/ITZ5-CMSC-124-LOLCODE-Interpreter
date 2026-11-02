@@ -4,6 +4,18 @@
 # https://regex101.com/
 # Project Requirement # 1 - Lexemes 
 
+# Assumptions and Formatting Rules: (don't delete)
+# 1) LOLCODE source files should have .lol extension
+# 2) Should start with HAI and end in KTHXBYE, no need for version number
+# 3) You may assume ONE LINE CONTAINS ONE STATEMENT ONLY
+# 4) There is no need to support SOFT COMMAND BREAKS, EACH STATEMENT IS DELIMITED BY NEW LINE
+# 5) Assume that there is only one whitespace in between keywords
+# 6) Indentation is IRRELEVANT
+# 7) Spaces inside YARN (string) should be RETAINED
+# 8) Comments are NOT CONSIDERED STATEMENTS and MUST BE IGNORED!!
+# 9) Keywords OBTW and TLDR MUST HAVE THEIR OWN LINES (bawal ung OBTW <comment> TLDR)
+# 10) Variables are declared in WAZZUP BUHBYE ( so dapat after HAI, WAZZUP BUHBYE agad OR NONE AT ALL)
+
 import re # import regex
 
 # ------------- example code -----------
@@ -17,6 +29,8 @@ code2 = """HAI
 I HAS A var ITZ 12
 VISIBLE "noot noot" var
 KTHXBYE"""
+
+
 
 def getLexemes(code): # functions for getting lexemes
     lexical_table = [] # blank lexical table
