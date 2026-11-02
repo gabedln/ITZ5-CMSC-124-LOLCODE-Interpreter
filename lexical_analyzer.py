@@ -30,6 +30,39 @@ I HAS A var ITZ 12
 VISIBLE "noot noot" var
 KTHXBYE"""
 
+# ------------------------------------------------------------------------------------------------------------
+# FUNCTION FOR DEALING WITH COMMENTS:
+# comments are not considered statements and must be ignored; we will STRIP COMMENTS AWAY before passing to getLexemes() function
+def stripComments(code):
+    clean_lines = [] # init empty list for clean lines
+    obtw_tldr = False # flag tracker for obtw_tldr (comment block)
+
+    code_lines = code.split("\n") # split the code into lines
+    for line in code_lines:
+        stripped_line = line.strip() # strip the line to remove leading/trailing whitespace
+
+        if stripped_line == "OBTW": # if OBTW start, we set the flag to True and continue 
+            obtw_tldr = True
+            continue
+        elif stripped_line == "TLDR": # if TLDR, we end the flag and continue
+            obtw_tldr = False
+            continue
+        elif obtw_tldr: # while obtw_tldr == TRUE, we just continue
+            continue # wala tayong pake sa lines of code kapag naka enclose sa OBTW and TLDR
+
+        match = re.search(r'BTW', stripped_line)
+
+        if match: # if may nahanap tayong BTW sa line, we will only pass the part before it to the clean_lines list
+            stripped_line = stripped_line[:match.start()].strip() # remove comment part
+
+        clean_lines.append(stripped_line) # add the cleaned line to the list
+
+    if obtw_tldr == True: # kapag TRUE parin siya even after, ibig sabihin hindi na close so syntax error
+        print("Syntax Error: Unclosed comment block (OBTW without TLDR)")
+        return None
+
+    return "\n".join(clean_lines) # join the cleaned lines back into a single string
+# ------------------------------------------------------------------------------------------------------------
 
 
 def getLexemes(code): # functions for getting lexemes
