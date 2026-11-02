@@ -15,8 +15,9 @@
 # 8) Comments are NOT CONSIDERED STATEMENTS and MUST BE IGNORED!!
 # 9) Keywords OBTW and TLDR MUST HAVE THEIR OWN LINES (bawal ung OBTW <comment> TLDR)
 # 10) Variables are declared in WAZZUP BUHBYE ( so dapat after HAI, WAZZUP BUHBYE agad OR NONE AT ALL)
+# 11) All variables must be declared inside the WAZZUP portion of the program. The WAZZUP clause is found at the beginning of the program, after HAI.
 
-import re # import regex
+import re  # import regex
 
 # ------------- example code -----------
 code = """HAI
@@ -97,91 +98,98 @@ def stripComments(code):
 # ------------- FUNCTION FOR GETTING LEXEMES -----------------------------------------------------------------
 def getLexemes(code): # function for getting lexemes
     lexical_table = [] # init for lexical table (blank)
-    symbol_table = [] # for symbol table (future implementation)
 
     pl_element = [ # PL elements, regex, and classification
             #  ---------------- code delimiters ------------------------------
-            ['HAI', r'^HAI$', "Code Delimiter"], # format is [TABLENAME, REGEX, CLASSIFICATION]
-            ['KTHXBYE', r'^KTHXBYE$', "Code Delimiter"],
+            ['HAI', "Code Delimiter"], # format is [TABLENAME, REGEX, CLASSIFICATION]
+            ['KTHXBYE', "Code Delimiter"],
 
             #------------------- variable declarations -----------------------
-            ['WAZZUP', r'^WAZZUP$', "Variable Declaration Delimeter"],
-            ['BUHBYE', r'^BUHBYE$', "Variable Declaration Delimeter"],
-            ['BTW', r'^BTW$', "Comment Delimiter"],
-            ['OBTW', r'^OBTW$', "Comment Delimiter"],
-            ['TLDR', r'^TLDR$', "Comment Delimiter"],
-            ['I HAS A', r'^I HAS A$', "Variable Declaration"],
-            ['ITZ', r'^ITZ$', "Variable Assignment"],
-            ['R', r'^R$', "Variable Assignment"],
+            ['WAZZUP', "Variable Declaration Delimeter"],
+            ['BUHBYE', "Variable Declaration Delimeter"],
+            ['BTW', "Comment Delimiter"],
+            ['OBTW', "Comment Delimiter"],
+            ['TLDR', "Comment Delimiter"],
+            ['I HAS A', "Variable Declaration"],
+            ['ITZ', "Variable Assignment"],
+            ['R', "Variable Assignment"],
 
             # ---------- arithmetic operations -----------------------------
-            ['SUM OF', r'^SUM OF$', "Addition Operation"],
-            ['DIFF OF', r'^DIFF OF$', "Subtraction Operation"],
-            ['PRODUKT OF', r'^PRODUKT OF$', "Multiplication Operation"],
-            ['QUOSHUNT OF', r'^QUOSHUNT OF$', "Division Operation"],
-            ['MOD OF', r'^MOD OF$', "Modulo Operation"],
+            ['SUM OF', "Addition Operation"],
+            ['DIFF OF', "Subtraction Operation"],
+            ['PRODUKT OF', "Multiplication Operation"],
+            ['QUOSHUNT OF', "Division Operation"],
+            ['MOD OF', "Modulo Operation"],
+            ['AN', "Delimiter"],
 
             # ------------- boolean operations --------------------
-            ['BOTH OF', r'^BOTH OF$', "AND Operation"],
-            ['EITHER OF', r'^EITHER OF$', "OR Operation"],
-            ['WON OF', r'^WON OF$', 'XOR Operation'],
-            ['NOT', r'^NOT$', "NOT Operation"],
-            ['ANY OF', r'^ANY OF$', 'Infinite OR Operation'],
-            ['ALL OF', r'^ALL OF$', 'Infinite AND Operation'],
+            ['BOTH OF', "AND Operation"],
+            ['EITHER OF', "OR Operation"],
+            ['WON OF', 'XOR Operation'],
+            ['NOT', "NOT Operation"],
+            ['ANY OF', 'Infinite OR Operation'],
+            ['ALL OF', 'Infinite AND Operation'],
 
             # --------------- comparison operations -----------------
-            ['BOTH SAEM', r'^BOTH SAEM$', 'Equality Operation'],
-            ['DIFFRINT', r'^DIFFRINT$', 'Inequality Operation'],
-            ['BIGGR OF', r'^BIGGR OF$', "Max Operation"],
-            ['SMALLR OF', r'^SMALLR OF$', "Min Operation"],
+            ['BOTH SAEM', "Equality Operation"],
+            ['DIFFRINT', "Inequality Operation"],
+            ['BIGGR OF', "Max Operation"],
+            ['SMALLR OF', "Min Operation"],
 
             # ---------------- string concatenation ------------------
-            ['SMOOSH', r'^SMOOSH$','String Concatenation'],
+            ['SMOOSH', 'String Concatenation'],
 
             # ----------------- type casting ------------------------
-            ['MAEK', r'^MAEK$','Type Casting'],
-            ['A', r'^A$','Type Casting Qualifier'],
-            ['IS NOW A', r'^IS NOW A$','Type Casting Operation'],
+            ['MAEK', 'Type Casting'],
+            ['A', 'Type Casting Qualifier'],
+            ['IS NOW A', 'Type Casting Operation'],
 
             # ------------------ input and output (print() and input()) ----------
-            ['VISIBLE',r'^VISIBLE$', 'Output Keyword'],
-            ['GIMMEH', r'^GIMMEH$', 'Input Keyword'],
+            ['VISIBLE','Output Keyword'],
+            ['GIMMEH', 'Input Keyword'],
 
             # ------------------ flow-control statements -----------------
-            ['O RLY?', r'^O RLY$','Conditional Statement Delimiter'],
-            ['YA RLY', r'^YA RLY$', 'If'],
-            ['MEBBE', r'^MEBBE$', 'Else If'],
-            ['OIC', r'^OIC$', 'End of If-Else Block'],
-            ['NO WAI', r'^NO WAI$','Else'],
+            ['O RLY?', 'Conditional Statement Delimiter'],
+            ['YA RLY', 'If'],
+            ['MEBBE', 'Else If'],
+            ['OIC', 'End of If-Else Block'],
+            ['NO WAI', 'Else'],
 
             # ------------------ loop statements -----------------
-            ['IM IN YR', r'^IM IN YR$', 'Loop Keyword'], 
-            ['IM OUTTA YR', r'^IM OUTTA YR$', 'End of Loop Block']
+            ['IM IN YR', 'Loop Keyword'], 
+            ['IM OUTTA YR', 'End of Loop Block'],
 
-            # ----------------- mamaya na muna to iimplement, unahin muna hanggang loop
-            # ['UPPIN', r'^UPPIN$','Increment'],
-            # ['NERFIN', r'^NERFIN$','Decrement'],
-            # ['YR', r'^YR$','Loop Identifier'],
-            # ['TIL', r'^TIL$','Until Loop'],
-            # ['WILE', r'^WILE$','While Loop'],
-            # ['HOW IZ I', r'^HOW IZ I$', 'Function Definition'],
-            # ['IF U SAY SO', r'^IF U SAY SO$', 'Function Delimiter'],
-            # ['GTFO', r'^GTFO$', 'Function Return'],
-            # ['FOUND YR', r'^FOUND YR$', 'Function Return Value'],
-            # ['I IZ', r'^I IZ$', 'Function Return Value'],
-            # ['MKAY', r'^MKAY$', 'End of Code Delimiter']
+            # ----------------- increment and decrement statements -----------------
+            ['UPPIN', 'Increment'],
+            ['NERFIN', 'Decrement'],
+
+            # ----------------- additional loop statements -----------------
+            ['YR', 'Loop Identifier'],
+            ['TIL', 'Until Loop'],
+            ['WILE', 'While Loop'],
+
+            #-------------------------------- function statements -----------------
+            ['HOW IZ I', r'^HOW IZ I$', 'Function Definition'],
+            ['IF U SAY SO', r'^IF U SAY SO$', 'Function Delimiter'],
+            ['GTFO', r'^GTFO$', 'Function Return'],
+            ['FOUND YR', r'^FOUND YR$', 'Function Return Value'],
+            ['I IZ', r'^I IZ$', 'Function Return Value'],
+            ['MKAY', r'^MKAY$', 'End of Code Delimiter']
     ]
 
+    code = stripComments(code) # we will strip comments first before passing to getLexemes() function
     lines = code.split("\n") # we split the line into an array ; delimeter is new line
 
     if "HAI" == lines[0] and "KTHXBYE" == lines[-1]: # if HAI is in beginning and KTHXBYE at the end, that's when we do the rest
-        lexical_table.append([pl_element[0][0], pl_element[0][2]]) # appends HAI
+        lexical_table.append([pl_element[0][0], pl_element[0][1]]) # appends HAI
 
         for i in lines[1:-1]: # since we checked the start and the end already, we will iterate through first and last lines
             whole_string = i.strip() # strip the string to remove new line
+            print(f"Processing line: {whole_string}") # DEBUG: print line being procesed
 
             while whole_string != "": # while the string is not empty
                 matched = False # initial bool; match false
+                print(f"Remaining string to process: {whole_string}") # print the remaining string to process
 
                 if whole_string.startswith('"'): # For YARN literals, if starts with quotation
                     closing = whole_string.find('"', 1) # starting from index 1, we find the partner end quotation
@@ -199,7 +207,7 @@ def getLexemes(code): # function for getting lexemes
                 if not matched: # if after going through yarn literal still not match, we check each item in pl_element
                     for j in pl_element:
                         if whole_string.startswith(j[0]): # we use string comparison not regex
-                            lexical_table.append([j[0], j[2]]) # appends 
+                            lexical_table.append([j[0], j[1]]) # appends 
                             whole_string = whole_string[len(j[0]):].strip()
 
                             # immediately grab the identifier that follows I HAS A
@@ -219,11 +227,11 @@ def getLexemes(code): # function for getting lexemes
                     remaining  = parts[1].strip() if len(parts) > 1 else ""
 
                     if re.match(r'^-?[0-9]+$', token):           # number literal
-                        lexical_table.append([token, "NUMBR Literal"])
+                        lexical_table.append([int(token), "NUMBR Literal"])
                     elif re.match(r'^(WIN|FAIL)$', token):
                         lexical_table.append([token, "TROOF Literal"])
                     elif re.match(r'^-?[0-9]+\.[0-9]+$', token):
-                        lexical_table.append([token, "NUMBAR Literal"])
+                        lexical_table.append([float(token), "NUMBAR Literal"])
                     # (YARN strings are handled before this block — no branch needed here)
                     elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token):  # varident
                         lexical_table.append([token, "Variable Identifier"])
@@ -234,7 +242,7 @@ def getLexemes(code): # function for getting lexemes
 
                     whole_string = remaining
 
-        lexical_table.append([pl_element[1][0], pl_element[1][2]]) # appends KTHXBYE
+        lexical_table.append([pl_element[1][0], pl_element[1][1]]) # appends KTHXBYE
 
     else: # else for initial if ; no HAI or no KTHXBYE (not at beginning or end) results in an error
         return None
@@ -244,5 +252,10 @@ def getLexemes(code): # function for getting lexemes
     for line in lexical_table:
         print(f"{line[0]:<10} | {line[1]}")
     print("----------------------------------")
-    print(lexical_table)
+
     return lexical_table
+
+getLexemes(code)
+getLexemes(code2)
+getLexemes(code3)
+getLexemes(code4)
