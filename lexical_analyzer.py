@@ -20,15 +20,40 @@ import re # import regex
 
 # ------------- example code -----------
 code = """HAI
-I HAS A var ITZ 5
-VISIBLE var
-KTHXBYE"""
+    I HAS A var ITZ 5 BTW this is a comment
+    OBTW
+    this should not be
+    seen
+    amen?
+    TLDR
+    VISIBLE var
+    KTHXBYE"""
 
 # ------------- example code 2 ---------
 code2 = """HAI
-I HAS A var ITZ 12
-VISIBLE "noot noot" var
-KTHXBYE"""
+    I HAS A var ITZ 12
+    VISIBLE "noot noot" var
+    KTHXBYE"""
+
+# ------------- example code 3 (with comments) ---------
+code3 = """HAI
+    BTW this is a comment
+    I HAS A x ITZ 10
+    OBTW
+    this whole block is a comment
+    TLDR
+    VISIBLE x
+    KTHXBYE"""
+
+# ------------- example code 4 (with WAZZUP block and more keywords) ---------
+code4 = """HAI
+    WAZZUP
+        I HAS A a ITZ 0
+        I HAS A b
+    BUHBYE
+    b R SUM OF a AN 5
+    VISIBLE b
+    KTHXBYE"""
 
 # ------------------------------------------------------------------------------------------------------------
 # FUNCTION FOR DEALING WITH COMMENTS:
