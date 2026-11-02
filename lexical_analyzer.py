@@ -185,11 +185,11 @@ def getLexemes(code): # function for getting lexemes
 
         for i in lines[1:-1]: # since we checked the start and the end already, we will iterate through first and last lines
             whole_string = i.strip() # strip the string to remove new line
-            print(f"Processing line: {whole_string}") # DEBUG: print line being procesed
+            #print(f"Processing line: {whole_string}") # DEBUG: print line being procesed
 
             while whole_string != "": # while the string is not empty
                 matched = False # initial bool; match false
-                print(f"Remaining string to process: {whole_string}") # print the remaining string to process
+                #print(f"Remaining string to process: {whole_string}") # print the remaining string to process
 
                 if whole_string.startswith('"'): # For YARN literals, if starts with quotation
                     closing = whole_string.find('"', 1) # starting from index 1, we find the partner end quotation
@@ -248,14 +248,14 @@ def getLexemes(code): # function for getting lexemes
         return None
 
     # ----- printing the lexical table --------------
-    print("\n-----------Lexical Table----------")
-    for line in lexical_table:
-        print(f"{line[0]:<10} | {line[1]}")
-    print("----------------------------------")
+    # print("\n-----------Lexical Table----------")
+    # for line in lexical_table:
+    #     print(f"{line[0]:<10} | {line[1]}")
+    # print("----------------------------------")
 
     return lexical_table
 
-getLexemes(code)
-getLexemes(code2)
-getLexemes(code3)
-getLexemes(code4)
+# getLexemes(code)
+# getLexemes(code2)
+# getLexemes(code3)
+# getLexemes(code4)
