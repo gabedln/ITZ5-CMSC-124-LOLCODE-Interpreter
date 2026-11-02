@@ -94,17 +94,82 @@ def stripComments(code):
     return "\n".join(clean_lines) # join the cleaned lines back into a single string
 # ------------------------------------------------------------------------------------------------------------
 
+# ------------- FUNCTION FOR GETTING LEXEMES -----------------------------------------------------------------
+def getLexemes(code): # function for getting lexemes
+    lexical_table = [] # init for lexical table (blank)
+    symbol_table = [] # for symbol table (future implementation)
 
-def getLexemes(code): # functions for getting lexemes
-    lexical_table = [] # blank lexical table
-    symbol_table = [] # blank symbol table (future implementation)
+    pl_element = [ # PL elements, regex, and classification
+            #  ---------------- code delimiters ------------------------------
+            ['HAI', r'^HAI$', "Code Delimiter"], # format is [TABLENAME, REGEX, CLASSIFICATION]
+            ['KTHXBYE', r'^KTHXBYE$', "Code Delimiter"],
 
-    pl_element = [ # some PL elements (only for base testing, most of these are the basics)
-        ['HAI', r'^HAI$', "Code Delimiter"], # format is [TABLENAME, REGEX, CLASSIFICATION]
-        ['KTHXBYE', r'^KTHXBYE$', "Code Delimiter"],
-        ['I HAS A', r'^I HAS A$', "Variable Declaration"],
-        ['ITZ', r'^ITZ$', "Variable Assignment"],
-        ['VISIBLE', r'^VISIBLE$', "Output Keyword"]
+            #------------------- variable declarations -----------------------
+            ['WAZZUP', r'^WAZZUP$', "Variable Declaration Delimeter"],
+            ['BUHBYE', r'^BUHBYE$', "Variable Declaration Delimeter"],
+            ['BTW', r'^BTW$', "Comment Delimiter"],
+            ['OBTW', r'^OBTW$', "Comment Delimiter"],
+            ['TLDR', r'^TLDR$', "Comment Delimiter"],
+            ['I HAS A', r'^I HAS A$', "Variable Declaration"],
+            ['ITZ', r'^ITZ$', "Variable Assignment"],
+            ['R', r'^R$', "Variable Assignment"],
+
+            # ---------- arithmetic operations -----------------------------
+            ['SUM OF', r'^SUM OF$', "Addition Operation"],
+            ['DIFF OF', r'^DIFF OF$', "Subtraction Operation"],
+            ['PRODUKT OF', r'^PRODUKT OF$', "Multiplication Operation"],
+            ['QUOSHUNT OF', r'^QUOSHUNT OF$', "Division Operation"],
+            ['MOD OF', r'^MOD OF$', "Modulo Operation"],
+
+            # ------------- boolean operations --------------------
+            ['BOTH OF', r'^BOTH OF$', "AND Operation"],
+            ['EITHER OF', r'^EITHER OF$', "OR Operation"],
+            ['WON OF', r'^WON OF$', 'XOR Operation'],
+            ['NOT', r'^NOT$', "NOT Operation"],
+            ['ANY OF', r'^ANY OF$', 'Infinite OR Operation'],
+            ['ALL OF', r'^ALL OF$', 'Infinite AND Operation'],
+
+            # --------------- comparison operations -----------------
+            ['BOTH SAEM', r'^BOTH SAEM$', 'Equality Operation'],
+            ['DIFFRINT', r'^DIFFRINT$', 'Inequality Operation'],
+            ['BIGGR OF', r'^BIGGR OF$', "Max Operation"],
+            ['SMALLR OF', r'^SMALLR OF$', "Min Operation"],
+
+            # ---------------- string concatenation ------------------
+            ['SMOOSH', r'^SMOOSH$','String Concatenation'],
+
+            # ----------------- type casting ------------------------
+            ['MAEK', r'^MAEK$','Type Casting'],
+            ['A', r'^A$','Type Casting Qualifier'],
+            ['IS NOW A', r'^IS NOW A$','Type Casting Operation'],
+
+            # ------------------ input and output (print() and input()) ----------
+            ['VISIBLE',r'^VISIBLE$', 'Output Keyword'],
+            ['GIMMEH', r'^GIMMEH$', 'Input Keyword'],
+
+            # ------------------ flow-control statements -----------------
+            ['O RLY?', r'^O RLY$','Conditional Statement Delimiter'],
+            ['YA RLY', r'^YA RLY$', 'If'],
+            ['MEBBE', r'^MEBBE$', 'Else If'],
+            ['OIC', r'^OIC$', 'End of If-Else Block'],
+            ['NO WAI', r'^NO WAI$','Else'],
+
+            # ------------------ loop statements -----------------
+            ['IM IN YR', r'^IM IN YR$', 'Loop Keyword'], 
+            ['IM OUTTA YR', r'^IM OUTTA YR$', 'End of Loop Block']
+
+            # ----------------- mamaya na muna to iimplement, unahin muna hanggang loop
+            # ['UPPIN', r'^UPPIN$','Increment'],
+            # ['NERFIN', r'^NERFIN$','Decrement'],
+            # ['YR', r'^YR$','Loop Identifier'],
+            # ['TIL', r'^TIL$','Until Loop'],
+            # ['WILE', r'^WILE$','While Loop'],
+            # ['HOW IZ I', r'^HOW IZ I$', 'Function Definition'],
+            # ['IF U SAY SO', r'^IF U SAY SO$', 'Function Delimiter'],
+            # ['GTFO', r'^GTFO$', 'Function Return'],
+            # ['FOUND YR', r'^FOUND YR$', 'Function Return Value'],
+            # ['I IZ', r'^I IZ$', 'Function Return Value'],
+            # ['MKAY', r'^MKAY$', 'End of Code Delimiter']
     ]
 
     lines = code.split("\n") # we split the line into an array ; delimeter is new line
