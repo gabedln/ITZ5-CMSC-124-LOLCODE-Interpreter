@@ -93,6 +93,40 @@ def parseOutput(tokens, i): # VISIBLE has infiinte arity, meaning it can take n 
     return i
 # --------------------------------------------------------------------------------------------------------------------------------------------------
 
+def parseExpression(tokens, i):
+    return
+
+def parseDeclaration(tokens, i):
+    return
+
+def parseAssignment(tokens, i):
+    return
+
+def parseCasting(tokens, i):
+    return
+
+def parseOutput(tokens, i):
+    return
+
+def parseInput(tokens, i):
+    return
+
+def parseConditional(tokens, i):
+    return
+
+def parseSwitch(tokens, i):
+    return
+
+def parseLoop(tokens, i):
+    return
+
+def parseFunction(tokens, i):
+    return
+
+
+def parseStatement(tokens, i):
+    return
+
 # ------------------------ code for checking syntax ---------------------------------------------------------------------------------
 def checkSyntax(code): # function that returns True if syntax is valid; else returns False
     lexical_table = getLexemes(code) # we use lexical analysis from previous milestone (use getLexemes function)
