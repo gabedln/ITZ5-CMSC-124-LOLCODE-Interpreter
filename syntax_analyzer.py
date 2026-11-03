@@ -4,6 +4,20 @@
 # https://regex101.com/
 # Project Requirement # 2 - Syntax Analyzer
 
+# Assumptions and Formatting Rules: (don't delete)
+# 1) LOLCODE source files should have .lol extension
+# 2) Should start with HAI and end in KTHXBYE, no need for version number
+# 3) You may assume ONE LINE CONTAINS ONE STATEMENT ONLY
+# 4) There is no need to support SOFT COMMAND BREAKS, EACH STATEMENT IS DELIMITED BY NEW LINE
+# 5) Assume that there is only one whitespace in between keywords
+# 6) Indentation is IRRELEVANT
+# 7) Spaces inside YARN (string) should be RETAINED
+# 8) Comments are NOT CONSIDERED STATEMENTS and MUST BE IGNORED!!
+# 9) Keywords OBTW and TLDR MUST HAVE THEIR OWN LINES (bawal ung OBTW <comment> TLDR)
+# 10) Variables are declared in WAZZUP BUHBYE ( so dapat after HAI, WAZZUP BUHBYE agad OR NONE AT ALL)
+# 11) All variables must be declared inside the WAZZUP portion of the program. The WAZZUP clause is found at the beginning of the program, after HAI.
+# 12) Operations are in PREFIX NOTATION (Important)
+
 import re # import regex
 from lexical_analyzer import getLexemes # we reuse the lexical analyzer
 
@@ -20,6 +34,12 @@ I HAS A other
 VISIBLE "noot noot" var 3.14 WIN other
 KTHXBYE"""
 
+# -------- separate natin ung mga operations na may two arity and infinite arity --------
+# ang logic dito is: kailangang mag match para alam kung ilang parameters ittake
+two_arity = ["SUM OF", "DIFF OF", "PRODUKT OF", "QUOSHUNT OF", "MOD OF",
+"BOTH OF", "EITHER OF", "WON OF", "BOTH SAEM", "DIFFRINT", "BIGGR OF", "SMALLR OF"]
+infinite_arity = ["ANY OF", "ALL OF"]
+# ------------------------------------------------------------------------------------------
 
 # ------------------------ parsing for ITZ (declaration of variables) ---------------------------------------------------------------------------------
 def parseValue(tokens, i): # returns the index of the next token (-1 if failed)
@@ -82,16 +102,25 @@ def checkSyntax(code): # function that returns True if syntax is valid; else ret
     tokens = lexical_table[1:-1] # the tokens in between HAI and KTHXBYE
     i = 0 # iteration
 
-    while i < len(tokens): # while we haven't reached the end of all our tokens;
-        if tokens[i][1] == "Variable Declaration": # if the identified token is a Variable Declaration, then it is I HAS A
-            i = parseDeclaration(tokens, i) # we parse the values (we pass i, and we pass the total tokens), then we update i
-
-        elif tokens[i][1] == "Output Keyword": # if we identified it as Output Keyword, then we pass it to parseOutput
-            i = parseOutput(tokens, i)
-
-        else: # anything else can't start a statement
+    # since kailangan ng WAZZUP at BUHBYE for variable declaration; titignan if meron (if wala, okay lang, pero bawal na mag declare ng variables)
+    if i < len(tokens) and tokens[i][0] == "WAZZUP" and tokens[i][1] == "Variable Declaration Delimiter":
+        i += 1 # move past WAZZUP
+        while i < len(tokens) and tokens[i][0] != "BUHBYE" and tokens[i][1] != "Variable Declaration Delimiter": # while we haven't seen BUHBYE;
+            if tokens[i][0] == "I HAS A" and tokens[i][1] == "Variable Declaration":
+                i = parseDeclaration(tokens, i) # parse declarations (e.g I HAS A var)
+                if i == -1: # if invalid, return false
+                    return False
+            else: # if no I HAS A, retunr false
+                return False
+        
+        # if we reach the end and we don't see BUHBYE (not matching WAZZUP...BUHBYE) we return FALSE
+        if i >= len(tokens) or tokens[i][0] != BUHBYE and tokens[i][1] != "Variable Declaration Delimiter":
             return False
+        i += 1 # move past the block
+            
 
+    while i < len(tokens): # while we haven't reached the end of all our tokens;
+        i = parseStatement(tokens, i) # parse remaining statements
         if i == -1: # the statement was not valid
             return False
 
