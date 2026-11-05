@@ -2,6 +2,79 @@
 # https://github.com/amtuazon4/PyGUI/blob/main/source%20code/check_semantics.py
 # Project Requirement # 3 - Semantics
 
+#SEMANTICS CHECKLIST/THINGS TO CONSIDER
+
+#1. State & Program Structure (p. 2-3)
+# a. Variables
+# - remember variables current type and value
+#   (var -> type, value)
+# - variables are dynamically typed
+# - NOOB is default datatype
+# - check for redeclared/undeclared variables
+# - all variables must be inside WAZZUP
+
+# b. IT (p. 2, 6)
+# - implicit variable, always exists
+# - initial type and value = NOOB, NONE
+# - sasalo ng result ng expression na walang variable
+# - O RLY? and WTF? reads IT
+# - MAEK and function return values go to IT
+
+# c. Declaration (p. 2)
+# - I HAS A x -> NOOB, None
+# - I HAS A x ITZ "some" -> store value and type
+# - I HAS A x ITZ y -> copy y's value and type
+# - I HAS A x ITZ SUM OF 5 AN 4 -> evaluate muna bago store
+
+#2. Data Types (p. 3, 5)
+# a. Data types
+# - NOOB, TROOF, NUMBR, NUMBAR, YARN
+# - variables can change datatype depending on assigned value
+
+# b. Typecasting
+# - implicit = automatic conversion
+# - explicit = MAEK/IS NOW A
+# - MAEK -> result goes to IT, di nababago si var
+# - IS NOW A -> nababago si var
+# - NOOB can only be implicitly cast to TROOF
+# - explicit casting of NOOB is allowed
+
+#3. Operations (p. 3-5)
+# a. Arithmetic
+# - SUM, DIFF, PRODUKT, QUOSHUNT, MOD, BIGGR, SMALLR
+# - evaluate operands first
+# - if not NUMBR/NUMBAR, implicitly!!! typecast
+# - if both NUMBR -> result is NUMBR
+# - if at least one NUMBAR -> result is NUMBAR
+# - check division by 0 -> add a error checker
+
+# b. Boolean
+# - BOTH OF, EITHER OF, WON OF, NOT
+# - ALL OF and ANY OF can have multiple operands
+# - ALL OF/ANY OF read operands until MKAY
+# - convert operands to TROOF first and result is always TROOF
+# - ALL OF and ANY OF can't be nested
+# - can contain other bool
+
+# c. Comparison
+# - BOTH SAEM, DIFFRINT
+# - no automatic typecasting, e.g. yarn to numbr/numbar
+# - NUMBR comparison uses integer math
+# - NUMBAR comparison uses floating-point math
+
+#4. Statements (p. 3, 5-6)
+# a. VISIBLE
+# - operands to YARN
+# - concatenate all operands with +
+# - automatically adds newline
+
+# 5. Flow Control (p. 6-7)
+# a. O RLY -> IT is important
+# b. WTF? -> IT is important
+
+# 6. Functions (p. 8)
+
+
 from lexical_analyzer import getLexemes
 import re # import regex
 
