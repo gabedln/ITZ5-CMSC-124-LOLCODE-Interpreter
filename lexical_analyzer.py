@@ -170,12 +170,19 @@ def getLexemes(code): # function for getting lexemes
             ['WILE', 'While Loop'],
 
             #-------------------------------- function statements -----------------
-            ['HOW IZ I', r'^HOW IZ I$', 'Function Definition'],
-            ['IF U SAY SO', r'^IF U SAY SO$', 'Function Delimiter'],
-            ['GTFO', r'^GTFO$', 'Function Return'],
-            ['FOUND YR', r'^FOUND YR$', 'Function Return Value'],
-            ['I IZ', r'^I IZ$', 'Function Return Value'],
-            ['MKAY', r'^MKAY$', 'End of Code Delimiter']
+            #['HOW IZ I', r'^HOW IZ I$', 'Function Definition'],
+            #['IF U SAY SO', r'^IF U SAY SO$', 'Function Delimiter'],
+            #['GTFO', r'^GTFO$', 'Function Return'],
+            #['FOUND YR', r'^FOUND YR$', 'Function Return Value'],
+            #['I IZ', r'^I IZ$', 'Function Return Value'],
+            #['MKAY', r'^MKAY$', 'End of Code Delimiter']
+
+            ['HOW IZ I', 'Function Definition'],
+            ['IF U SAY SO', 'Function Delimiter'],
+            ['GTFO', 'Function Return'],
+            ['FOUND YR', 'Function Return Value'],
+            ['I IZ', 'Function Call'],
+            ['MKAY', 'End of Infinite Arity / Function Call']
     ]
 
     code = stripComments(code) # we will strip comments first before passing to getLexemes() function
@@ -207,7 +214,8 @@ def getLexemes(code): # function for getting lexemes
 
                 if not matched: # if after going through yarn literal still not match, we check each item in pl_element
                     for j in pl_element:
-                        if whole_string.startswith(j[0]): # we use string comparison not regex
+                        #if whole_string.startswith(j[0]): # we use string comparison not regex
+                        if re.match(re.escape(j[0]) + r'(?=\s|$)', whole_string): # regex match; keyword must end with whitespace or end of line
                             lexical_table.append([j[0], j[1]]) # appends 
                             whole_string = whole_string[len(j[0]):].strip()
 
