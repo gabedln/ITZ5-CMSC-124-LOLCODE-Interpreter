@@ -77,6 +77,7 @@
 
 from lexical_analyzer import getLexemes
 import re # import regex
+from decimal import Decimal, ROUND_DOWN # for exact truncation of NUMBAR -> YARN
 
 # ------------- example code -----------
 valid_code = """HAI
@@ -198,10 +199,12 @@ def typecast(val, new_data_type, explicit=False):
     if data_type == "NUMBAR":
         #truncate decimal if numbar to nmbr
         if new_data_type == "NUMBR":
-            val = int(val)
+            #val = int(val)
+            return int(val)
         #if yarn, convert the value to string of characters
         if new_data_type == "YARN":
-            val = str(val)
+            #val = str(val)
+            return str(Decimal(str(val)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)) # truncate to 2 decimal places
         #consider troof also, kapag 0 false, other value true
         if new_data_type == "TROOF":
             if val == 0:
@@ -240,6 +243,9 @@ def typecast(val, new_data_type, explicit=False):
                     print(f"Semantic Error: cannot typecast '{val}' to {new_data_type}")
                     return None
 
+            if not re.match(r'^-?[0-9]+(\.[0-9]+)?$', val):
+                print(f"Semantic Error: cannot typecast '{val}' to {new_data_type}")
+                return None
             if new_data_type == "NUMBR":
                 return int(float(val))
             return float(val)
@@ -258,6 +264,15 @@ def isKeyword(token, words):
 def isValue(token):
     return token[1] in ["NUMBR Literal", "NUMBAR Literal", "TROOF Literal", "Variable Identifier", "String Delimiter"] or isKeyword(token, ARITHMETIC + BOOLEAN + COMPARISON + ["SMOOSH", "MAEK"])
 
+#converts a lexer token into a python value
+def getLiteralValue(token):
+    if token[1] == "TROOF Literal":
+        return token[0] == "WIN"
+    if token[1] == "NUMBR Literal":
+        return int(token[0])  #here
+    if token[1] == "NUMBAR Literal":
+        return float(token[0])
+    return token[0] # YARN Literal  
 #SKELETON PA LANG
 
 #evaluates an expr
