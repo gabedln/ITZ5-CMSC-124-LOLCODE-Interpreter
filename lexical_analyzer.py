@@ -234,10 +234,16 @@ def getLexemes(code): # function for getting lexemes
                     elif re.match(r'^-?[0-9]+\.[0-9]+$', token):
                         lexical_table.append([float(token), "NUMBAR Literal"])
                     # (YARN strings are handled before this block — no branch needed here)
+                    elif re.match(r'^(TROOF|NOOB|NUMBR|NUMBAR|YARN)$', token): # must be checked before variable identifiers
+                        lexical_table.append([token, "TYPE"]) 
+                    elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token) and len(lexical_table) > 0 and lexical_table[-1][0] in ('HOW IZ I', 'I IZ'): # function name
+                        lexical_table.append([token, "Function Identifier"])
+                    elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token) and len(lexical_table) > 0 and lexical_table[-1][0] in ('IM IN YR', 'IM OUTTA YR'): # loop label
+                        lexical_table.append([token, "Loop Label"])
                     elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token):  # varident
                         lexical_table.append([token, "Variable Identifier"])
-                    elif re.match(r'^(TROOF|NOOB|NUMBR|NUMBAR|YARN)$', token):
-                        lexical_table.append([token, "TYPE"])            
+                    # elif re.match(r'^(TROOF|NOOB|NUMBR|NUMBAR|YARN)$', token):
+                        # lexical_table.append([token, "TYPE"])
                     else:
                         print(f"Warning: unrecognized token '{token}'")
 
