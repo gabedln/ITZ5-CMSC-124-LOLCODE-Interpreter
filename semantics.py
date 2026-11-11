@@ -264,40 +264,176 @@ def isKeyword(token, words):
 def isValue(token):
     return token[1] in ["NUMBR Literal", "NUMBAR Literal", "TROOF Literal", "Variable Identifier", "String Delimiter"] or isKeyword(token, ARITHMETIC + BOOLEAN + COMPARISON + ["SMOOSH", "MAEK"])
 
-#converts a lexer token into a python value
+#converts a lexer token
 def getLiteralValue(token):
     if token[1] == "TROOF Literal":
-        return token[0] == "WIN"
+        if token[0] == "WIN":
+            return True
+        else:
+            return False
     if token[1] == "NUMBR Literal":
         return int(token[0])  #here
     if token[1] == "NUMBAR Literal":
         return float(token[0])
     return token[0] # YARN Literal  
-#SKELETON PA LANG
 
-#evaluates an expr
-def evalExpr(tokens, i):
-    # prefix, binary, AN is required between the operands
-    # operands can be nested expressions
-    # both NUMBR result is NUMBR, at least one NUMBAR result is NUMBAR
-    #type cast those not NUMBR/NUMBAR, if cannot ay error
-    pass
+#check if token is a literal
+def isLiteral(token):
+    return token[1] in ["NUMBR Literal", 
+                        "NUMBAR Literal", 
+                        "TROOF Literal"]
 
-def evalArithmetic(tokens,i):
-    pass
+def evalArithmetic(operator, op1, op2):
+    op1_type = getDataType(op1)
+    op2_type = getDataType(op2)
+
+    if op1_type not in ["NUMBR", "NUMBAR"]:
+        op1 = typecast(op1, "NUMBAR")
+
+    if op2_type not in ["NUMBR", "NUMBAR"]:
+        op2 = typecast(op2, "NUMBAR")
+
+    if op1 is None or op2 is None:
+        return None
+
+    if operator == "SUM OF":
+        return op1 + op2
+    elif operator == "DIFF OF":
+        return op1 - op2
+    elif operator == "PRODUKT OF":
+        return op1 * op2
+
+    elif operator == "QUOSHUNT OF":
+        if op2 == 0:
+            print("Semantic Error: division by zero")
+            return None
+        return op1 / op2
+
+    elif operator == "MOD OF":
+        if op2 == 0:
+            print("Semantic Error: division by zero")
+            return None
+        return op1 % op2
+
+    elif operator == "BIGGR OF":
+        return max(op1, op2)
+
+    elif operator == "SMALLR OF":
+        return min(op1, op2)
 
 def evalBoolean(tokens, i):
     pass
 
 def evalComparison(tokens, i):
     pass
- 
+
+#since buong program nasa tokens, need hanapin yung end for eval expression
+def findExpressionEnd(tokens, i):
+    needed_op = 1 #start with 1 
+    j = i
+
+    #ilang operands need ng expression
+    while j < len(tokens) and needed_op > 0:
+        token = tokens[j]
+
+        # pag binary operator, kailangan niya ng 2 operands
+        if isKeyword(token, ARITHMETIC):
+            needed_op += 1
+        # pag literal or variable, may nakuha na so -1
+        elif isLiteral(token) or token[1] == "Variable Identifier":
+            needed_op -= 1
+
+        elif token[0] == "AN":
+            pass
+
+        else:
+            break
+
+        j += 1
+
+    #if wala nang needed operand, kumpleto na expression
+    if needed_op == 0:
+        return j
+
+    print("Semantic Error: invalid expression")
+    return i
+
+def evalExpression(tokens, i):
+    #temporary storage of values, e.g. SUM OF 1 AN 2, store niya 1, 2 tapos later ay yung result
+    values = [] 
+
+    end = findExpressionEnd(tokens, i)
+    if end == i:
+        return None, i
+    
+    j = end - 1 #last index ng token list, right to left babasahin since prefix
+
+    #read all tokens that are part of the expression
+    while j >= i:
+        token = tokens[j]
+        token_value = token[0]
+        token_type = token[1]
+
+        #if literal, kunin yung value and i-append sa stack
+        if isLiteral(token):
+            values.append(getLiteralValue(token))
+
+        #if var, find its value in the symbol table
+        elif token_type == "Variable Identifier":
+
+            var_index = findVar(token_value)
+
+            #if not found then undeclared var siya
+            if var_index == -1:
+                print("Semantic Error: undeclared variable", token_value)
+                values.append(None)
+            #append the found value
+            else:
+                values.append(symbol_table[var_index][1])
+
+        #if arithmetic operator, get 2 operands from stack
+        elif isKeyword(token, ARITHMETIC):
+            op1 = values.pop()
+            op2 = values.pop()
+
+            #evaluate the arithmetic expression
+            result = evalArithmetic(token[0], op1, op2)
+
+            #append the result to stack (for nested expressions)
+            values.append(result)
+
+        elif token_value == "AN":
+            pass
+
+        j -= 1     
+
+        #final result lang dapat matira sa stack
+        if j == len(tokens) - 1:
+            print("Semantic Error: invalid expression")
+            return None, i
+
+    #result and index of the next token
+    return values[0], end
  
 def evalMaek(tokens, i):
     pass
 
+# TEST FOR EVAL ARITHMETIC
+test_tokens = [
+    ["VISIBLE", "Output Keyword"],
+    ["SUM OF", "Addition Operation"],
+    ["5", "NUMBR Literal"],
+    ["AN", "Delimiter"],
+    ["PRODUKT OF", "Multiplication Operation"],
+    ["2", "NUMBR Literal"],
+    ["AN", "Delimiter"],
+    ["3", "NUMBR Literal"],
+    ["VISIBLE", "Output Keyword"],
+    ["10", "NUMBR Literal"]
+]
 
+result, next_index = evalExpression(test_tokens, 1)
 
-
-
-
+print(result)
+print(next_index)
+print(test_tokens[next_index])
