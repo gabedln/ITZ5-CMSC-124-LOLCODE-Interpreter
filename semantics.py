@@ -323,7 +323,6 @@ def evalArithmetic(operator, op1, op2):
         return min(op1, op2)
 
 def evalBoolean(operator, op1, op2):
-
     # loop through x in op1 because 'all of' handles a list, then if there is one considered false
     #in the operands, return false, else if all are true, return true
     if operator == "ALL OF":
@@ -360,28 +359,66 @@ def evalBoolean(operator, op1, op2):
         op1 = typecast(op1, "TROOF")
         return not op1
 
+def evalComparison(operator, op1, op2):
+    # - BOTH SAEM, DIFFRINT
+    # - no automatic typecasting, e.g. yarn to numbr/numbar
+    # - NUMBR comparison uses integer math
+    # - NUMBAR comparison uses floating-point math
+    #both saem
 
-def evalComparison(tokens, i):
-    pass
+    #operator2 for relational operations
+    if getDataType(op1) != getDataType(op2):
+        print("Semantic Error: no automatic typecasting for " + getDataType(op1) + " '" + str(op1) + "' and " + getDataType(op2) + " '" + str(op2) + "'")
+        return None
+    
+    if operator == "BOTH SAEM":
+        return op1 == op2
+    elif operator == "DIFFRINT":
+        return op1 != op2
+
 
 #since buong program nasa tokens, need hanapin yung end for eval expression
 def findExpressionEnd(tokens, i):
     needed_op = 1 #start with 1 
+    lists = [] #added for all of and any of
     j = i
 
-    #ilang operands need ng expression
-    while j < len(tokens) and needed_op > 0:
+    #keep going while we still need operands (or an ALL OF / ANY OF is still waiting for its MKAY)
+    while j < len(tokens) and (needed_op > 0 or len(lists) > 0):
         token = tokens[j]
 
+        #string is 3 tokens " text " and counts as one val
+        if token[1] == "String Delimiter":
+            if j + 2 < len(tokens) and tokens[j + 1][1] == "YARN Literal" and tokens[j + 2][1] == "String Delimiter":
+                needed_op -= 1
+                j += 3
+                continue
+            break
+
         # pag binary operator, kailangan niya ng 2 operands
-        if isKeyword(token, ARITHMETIC):
+        elif isKeyword(token, ARITHMETIC + COMPARISON + ["BOTH OF", "EITHER OF", "WON OF"]):
             needed_op += 1
         # pag literal or variable, may nakuha na so -1
         elif isLiteral(token) or token[1] == "Variable Identifier":
             needed_op -= 1
 
-        elif token[0] == "AN":
+        #1 operand for not, keep current count
+        elif isKeyword(token, ["NOT"]):
             pass
+
+        #take operands until mkay
+        elif isKeyword(token, ["ALL OF", "ANY OF"]):
+            lists.append(needed_op - 1)
+            needed_op = 1
+
+        elif token[0] == "AN":
+            if len(lists) > 0 and needed_op == 0:
+                needed_op = 1
+
+        elif token[0] == "MKAY" and len(lists) > 0:
+            if needed_op != 0:
+                break
+            needed_op = lists.pop()
 
         else:
             break
@@ -389,11 +426,13 @@ def findExpressionEnd(tokens, i):
         j += 1
 
     #if wala nang needed operand, kumpleto na expression
-    if needed_op == 0:
+    if needed_op == 0 and len(lists) == 0:
         return j
 
     print("Semantic Error: invalid expression")
     return i
+
+MKAY_FOUND = object() #need to mark mkay to know where any of, all of stops
 
 def evalExpression(tokens, i):
     #temporary storage of values, e.g. SUM OF 1 AN 2, store niya 1, 2 tapos later ay yung result
@@ -410,6 +449,12 @@ def evalExpression(tokens, i):
         token = tokens[j]
         token_value = token[0]
         token_type = token[1]
+ 
+        #find the delimiter first, push the text and skip 3 tokens since 1 val lang sha 
+        if token_type == "String Delimiter":
+            values.append(tokens[j - 1][0])
+            j -= 3
+            continue
 
         #if literal, kunin yung value and i-append sa stack
         if isLiteral(token):
@@ -431,15 +476,40 @@ def evalExpression(tokens, i):
         elif isKeyword(token, ARITHMETIC):
             op1 = values.pop()
             op2 = values.pop()
-
-            #evaluate the arithmetic expression
-            result = evalArithmetic(token[0], op1, op2)
-
             #append the result to stack (for nested expressions)
-            values.append(result)
+            values.append(evalArithmetic(token[0], op1, op2))
+
+        elif isKeyword(token, COMPARISON):
+            op1 = values.pop()
+            op2 = values.pop()
+            #evaluate comparison
+            values.append(evalComparison(token_value, op1, op2))
+
+        #these need 2 operands from stack
+        elif isKeyword(token, ["BOTH OF", "EITHER OF", "WON OF"]):
+            op1 = values.pop()
+            op2 = values.pop()
+            values.append(evalBoolean(token_value, op1, op2))
+
+        #if not, get 1 operand from stack
+        elif isKeyword(token, ["NOT"]):
+            op1 = values.pop()
+            values.append(evalBoolean("NOT", op1, None))
 
         elif token_value == "AN":
             pass
+
+        #put a marker on the stack for all of and any of
+        elif token_value == "MKAY":
+            values.append(MKAY_FOUND)
+
+        #take all operands until mkay is not yet found
+        elif isKeyword(token, ["ALL OF", "ANY OF"]):
+            operands = []
+            while values[-1] is not MKAY_FOUND:
+                operands.append(values.pop())
+            values.pop() #remove the marker
+            values.append(evalBoolean(token[0], operands, None))
 
         j -= 1     
 
