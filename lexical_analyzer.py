@@ -106,8 +106,8 @@ def getLexemes(code): # function for getting lexemes
             ['KTHXBYE', "Code Delimiter"],
 
             #------------------- variable declarations -----------------------
-            ['WAZZUP', "Variable Declaration Delimeter"],
-            ['BUHBYE', "Variable Declaration Delimeter"],
+            ['WAZZUP', "Variable Declaration Delimiter"],
+            ['BUHBYE', "Variable Declaration Delimiter"],
             ['BTW', "Comment Delimiter"],
             ['OBTW', "Comment Delimiter"],
             ['TLDR', "Comment Delimiter"],
