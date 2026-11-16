@@ -1,64 +1,16 @@
-# Sources:
-# https://github.com/christianrfg/lexical-analyzer/blob/master/LexicalAnalyzer.py
-# https://github.com/amtuazon4/PyGUI
-# https://regex101.com/
-# Project Requirement # 1 - Lexemes 
-
-# Assumptions and Formatting Rules: (don't delete)
-# 1) LOLCODE source files should have .lol extension
-# 2) Should start with HAI and end in KTHXBYE, no need for version number
-# 3) You may assume ONE LINE CONTAINS ONE STATEMENT ONLY
-# 4) There is no need to support SOFT COMMAND BREAKS, EACH STATEMENT IS DELIMITED BY NEW LINE
-# 5) Assume that there is only one whitespace in between keywords
-# 6) Indentation is IRRELEVANT
-# 7) Spaces inside YARN (string) should be RETAINED
-# 8) Comments are NOT CONSIDERED STATEMENTS and MUST BE IGNORED!!
-# 9) Keywords OBTW and TLDR MUST HAVE THEIR OWN LINES (bawal ung OBTW <comment> TLDR)
-# 10) Variables are declared in WAZZUP BUHBYE ( so dapat after HAI, WAZZUP BUHBYE agad OR NONE AT ALL)
-# 11) All variables must be declared inside the WAZZUP portion of the program. The WAZZUP clause is found at the beginning of the program, after HAI.
-# 12) Operations are in PREFIX NOTATION (Important)
-
 import re  # import regex
 
 # ------------- example code -----------
-code = """BTW this is a comment too
-    HAI BTW this is a comment
-    I HAS A var ITZ 12
-    VISIBLE "noot noot" var
-    OBTW
-    in line comment
-    TLDR
-    KTHXBYE"""
-
-# ------------- example code 2 ---------
-code2 = """BTW this is a comment too
-    HAI BTW this is a comment
-    I HAS A var ITZ 12
-    VISIBLE "noot noot" var
-    OBTW
-    in line comment
-    TLDR
-    KTHXBYE"""
-
-# ------------- example code 3 (with comments) ---------
-code3 = """HAI
-    BTW this is a comment
-    I HAS A x ITZ 10
-    OBTW
-    this whole block is a comment
-    TLDR
-    VISIBLE x
-    KTHXBYE"""
-
-# ------------- example code 4 (with WAZZUP block and more keywords) ---------
-code4 = """HAI
-    WAZZUP
-        I HAS A a ITZ 0
-        I HAS A b
-    BUHBYE
-    b R SUM OF a AN 5
-    VISIBLE b
-    KTHXBYE"""
+code = """
+HAI
+  WAZZUP
+    I HAS A x ITZ 1
+  BUHBYE
+  VISIBLE x
+  I HAS A y ITZ 2
+  VISIBLE y
+KTHXBYE
+"""
 
 # ------------------------------------------------------------------------------------------------------------
 # FUNCTION FOR DEALING WITH COMMENTS:
@@ -71,14 +23,20 @@ def stripComments(code):
     for line in code_lines:
         stripped_line = line.strip() # strip the line to remove leading/trailing whitespace
 
-        if stripped_line == "OBTW": # if OBTW start, we set the flag to True and continue 
+        if re.match(r'^OBTW(?:\s|$)', stripped_line): # if OBTW, we set the flag to TRUE and continue
+            if re.search(r'\bTLDR\b', stripped_line): # if TLDR and OBTW in same line, return None (error)
+                return None
             obtw_tldr = True
             continue
-        elif stripped_line == "TLDR": # if TLDR, we end the flag and continue
+        elif re.match(r'^TLDR(?:\s|$)', stripped_line): # if TLDR, we end the flag and continue
             if obtw_tldr == False: # if obtw_tldr is false when we encounter TLDR, it means there is no OBTW before TLDR
+                return None
+            after_tldr = stripped_line[4:].strip() # check if there is anything after TLDR
+            if after_tldr and not re.match(r'^BTW(?:\s|$)', after_tldr): # if there is something after TLDR and it's not a BTW comment, return None (error)
                 return None
             obtw_tldr = False
             continue
+
         elif obtw_tldr: # while obtw_tldr == TRUE, we just continue
             continue # wala tayong pake sa lines of code kapag naka enclose sa OBTW and TLDR
         
@@ -107,7 +65,7 @@ def stripComments(code):
 
 # ------------- FUNCTION FOR GETTING LEXEMES -----------------------------------------------------------------
 def getLexemes(code): # function for getting lexemes
-    lexical_table = [] # init for lexical table (blank)
+    lexical_table = [] # init for lexical table (one token list per source line)
 
     pl_element = [ # PL elements, regex, and classification
             #  ---------------- code delimiters ------------------------------
@@ -156,13 +114,13 @@ def getLexemes(code): # function for getting lexemes
 
             # ------------------ input and output (print() and input()) ----------
             ['VISIBLE','Output Keyword'],
+            ['+', 'Concatenation Delimiter'],
             ['GIMMEH', 'Input Keyword'],
 
             # ------------------ flow-control statements -----------------
             ['O RLY?', 'Conditional Statement Delimiter'],
             ['YA RLY', 'If'],
             ['MEBBE', 'Else If'],
-            ['OIC', 'End of If-Else Block'],
             ['NO WAI', 'Else'],
 
             # ------------------ loop statements -----------------
@@ -172,7 +130,7 @@ def getLexemes(code): # function for getting lexemes
             ['WTF?', 'Switch Case Delimiter'],
             ['OMG', 'Case'],
             ['OMGWTF', 'Default'],
-            ['OIC', 'End of Switch Case Block'],
+            ['OIC', 'Flow Control Delimiter'],
             # ----------------- increment and decrement statements -----------------
             ['UPPIN', 'Increment'],
             ['NERFIN', 'Decrement'],
@@ -198,9 +156,10 @@ def getLexemes(code): # function for getting lexemes
     lines = code.split("\n") # we split the line into an array ; delimeter is new line
 
     if "HAI" == lines[0] and "KTHXBYE" == lines[-1]: # if HAI is in beginning and KTHXBYE at the end, that's when we do the rest
-        lexical_table.append([pl_element[0][0], pl_element[0][1]]) # appends HAI
+        lexical_table.append([[pl_element[0][0], pl_element[0][1]]]) # appends HAI
 
         for i in lines[1:-1]: # since we checked the start and the end already, we will iterate through first and last lines
+            line_tokens = []
             whole_string = i.strip() # strip the string to remove new line
             #print(f"Processing line: {whole_string}") # DEBUG: print line being procesed
 
@@ -212,9 +171,9 @@ def getLexemes(code): # function for getting lexemes
                     closing = whole_string.find('"', 1) # starting from index 1, we find the partner end quotation
                     if closing != -1: # if we found a closing;
                         yarn = whole_string[1:closing]   # we take the value in between quotations
-                        lexical_table.append(['"', "String Delimiter"]) # add the quotation literal to lexical table;
-                        lexical_table.append([yarn, "YARN Literal"]) # add the YARN literal to lexical table;
-                        lexical_table.append(['"', "String Delimiter"]) # add the closing quotation literal to lexical table;
+                        line_tokens.append(['"', "String Delimiter"]) # add the quotation literal to lexical table;
+                        line_tokens.append([yarn, "YARN Literal"]) # add the YARN literal to lexical table;
+                        line_tokens.append(['"', "String Delimiter"]) # add the closing quotation literal to lexical table;
                         whole_string = whole_string[closing + 1:].strip() # removes
                     else:
                         # print("Warning: unterminated string literal")
@@ -226,7 +185,9 @@ def getLexemes(code): # function for getting lexemes
                     for j in pl_element:
                         #if whole_string.startswith(j[0]): # we use string comparison not regex
                         if re.match(re.escape(j[0]) + r'(?=\s|$)', whole_string): # regex match; keyword must end with whitespace or end of line
-                            lexical_table.append([j[0], j[1]]) # appends 
+                            if j[0] in ['BTW', 'OBTW', 'TLDR']: # if the PL matched is a comment, we ignore it and continue
+                                return None # at this point comments should have been stripped already, so if we encounter a comment here, it means there is an error in the code
+                            line_tokens.append([j[0], j[1]]) # appends 
                             whole_string = whole_string[len(j[0]):].strip()
 
                             # immediately grab the identifier that follows I HAS A
@@ -235,7 +196,10 @@ def getLexemes(code): # function for getting lexemes
                                 if parts: # the first is the var name (the one right after I HAS A)
                                     var_name = parts[0]
                                     if re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', var_name):
-                                        lexical_table.append([var_name, "Variable Identifier"]) # then we add that to lexical table
+                                        for k in pl_element: # we check if the var_name is not a keyword
+                                            if var_name == k[0]:
+                                                return None # if it is a keyword, return None (error)
+                                        line_tokens.append([var_name, "Variable Identifier"]) # then we add that to lexical table
                                         whole_string = whole_string[len(var_name):].strip()
                                     else:
                                         return None
@@ -249,38 +213,44 @@ def getLexemes(code): # function for getting lexemes
                     remaining  = parts[1].strip() if len(parts) > 1 else ""
 
                     if re.match(r'^-?[0-9]+$', token):           # number literal
-                        lexical_table.append([token, "NUMBR Literal"])
+                        line_tokens.append([token, "NUMBR Literal"])
                     elif re.match(r'^(WIN|FAIL)$', token):
-                        lexical_table.append([token, "TROOF Literal"])
+                        line_tokens.append([token, "TROOF Literal"])
                     elif re.match(r'^-?[0-9]+\.[0-9]+$', token):
-                        lexical_table.append([token, "NUMBAR Literal"])
+                        line_tokens.append([token, "NUMBAR Literal"])
                     elif re.match(r'^(TROOF|NOOB|NUMBR|NUMBAR|YARN)$', token): # types
-                        lexical_table.append([token, "TYPE"]) 
-                    elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token) and len(lexical_table) > 0 and lexical_table[-1][0] in ('HOW IZ I', 'I IZ'): # function name
-                        lexical_table.append([token, "Function Identifier"])
-                    elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token) and len(lexical_table) > 0 and lexical_table[-1][0] in ('IM IN YR', 'IM OUTTA YR'): # loop label
-                        lexical_table.append([token, "Loop Label"])
+                        line_tokens.append([token, "TYPE Literal"])
+                    elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token) and len(line_tokens) > 0 and line_tokens[-1][0] in ('HOW IZ I', 'I IZ'): # function name
+                        line_tokens.append([token, "Function Identifier"])
+                    elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token) and len(line_tokens) > 0 and line_tokens[-1][0] in ('IM IN YR', 'IM OUTTA YR'): # loop label
+                        line_tokens.append([token, "Loop Label"])
                     elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token): # General variable identifier reference
-                        lexical_table.append([token, "Variable Identifier"])
+                        line_tokens.append([token, "Variable Identifier"])
                     else:
-                        print(f"Warning: unrecognized token '{token}'")
+                        return None # if no match, return None (error)
 
                     whole_string = remaining
 
-        lexical_table.append([pl_element[1][0], pl_element[1][1]]) # appends KTHXBYE
+            lexical_table.append(line_tokens)
+
+        lexical_table.append([[pl_element[1][0], pl_element[1][1]]]) # appends KTHXBYE
 
     else: # else for initial if ; no HAI or no KTHXBYE (not at beginning or end) results in an error
         return None
 
     # ----- printing the lexical table --------------
-    # print("\n-----------Lexical Table----------")
-    # for line in lexical_table:
-    #     print(f"{line[0]:<10} | {line[1]}")
-    # print("----------------------------------")
+    print("\n-----------Lexical Table----------")
+    for line in lexical_table:
+        for token in line:
+            print(f"{token[0]:<10} | {token[1]}")
+    print("----------------------------------")
 
     return lexical_table
 
-# getLexemes(code)
-# getLexemes(code2)
-# getLexemes(code3)
-# getLexemes(code4)
+getLexemes(code) # call the function to get lexemes for the example code
+
+# Sources:
+# https://github.com/christianrfg/lexical-analyzer/blob/master/LexicalAnalyzer.py
+# https://github.com/amtuazon4/PyGUI
+# https://regex101.com/
+# Project Requirement # 1 - Lexemes 
