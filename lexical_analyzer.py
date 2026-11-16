@@ -21,14 +21,13 @@
 import re  # import regex
 
 # ------------- example code -----------
-code = """HAI
-    I HAS A var ITZ 5 BTW this is a comment
+code = """BTW this is a comment too
+    HAI BTW this is a comment
+    I HAS A var ITZ 12
+    VISIBLE "noot noot" var
     OBTW
-    this should not be
-    seen
-    amen?
+    in line comment
     TLDR
-    VISIBLE var
     KTHXBYE"""
 
 # ------------- example code 2 ---------
@@ -76,15 +75,25 @@ def stripComments(code):
             obtw_tldr = True
             continue
         elif stripped_line == "TLDR": # if TLDR, we end the flag and continue
+            if obtw_tldr == False: # if obtw_tldr is false when we encounter TLDR, it means there is no OBTW before TLDR
+                return None
             obtw_tldr = False
             continue
         elif obtw_tldr: # while obtw_tldr == TRUE, we just continue
             continue # wala tayong pake sa lines of code kapag naka enclose sa OBTW and TLDR
-
-        match = re.search(r'BTW', stripped_line)
-
-        if match: # if may nahanap tayong BTW sa line, we will only pass the part before it to the clean_lines list
-            stripped_line = stripped_line[:match.start()].strip() # remove comment part
+        
+        # we use match iter because we find all instances of BTW
+        for match in re.finditer(r'\bBTW\b', stripped_line): 
+            before = stripped_line[:match.start()] # find everything before btw
+            # e.g. I HAS A VAR ITZ 5BTW this is a comment
+            # before = I HAS A VAR ITZ 5 (we remove btw and the rest)
+            # if there are even numbers of quotes before (meaning closed quotes), then everything after BTW is a comment
+            # if there are odd numbers of quotes before (only 1 quotation) there are two instances:
+                # a) BTW is part of a string
+                # b) Closed string (which would produce an error that we have catched)
+            if before.count('"') % 2 == 0:
+                stripped_line = before.strip()
+                break
 
         if stripped_line: # if the stripped line is not empty, we add it to the clean_lines list
             clean_lines.append(stripped_line) # add the cleaned line to the list
@@ -159,7 +168,11 @@ def getLexemes(code): # function for getting lexemes
             # ------------------ loop statements -----------------
             ['IM IN YR', 'Loop Keyword'], 
             ['IM OUTTA YR', 'End of Loop Block'],
-
+            # ----------------- switch case statements ----------------------------
+            ['WTF?', 'Switch Case Delimiter'],
+            ['OMG', 'Case'],
+            ['OMGWTF', 'Default'],
+            ['OIC', 'End of Switch Case Block'],
             # ----------------- increment and decrement statements -----------------
             ['UPPIN', 'Increment'],
             ['NERFIN', 'Decrement'],
@@ -170,13 +183,6 @@ def getLexemes(code): # function for getting lexemes
             ['WILE', 'While Loop'],
 
             #-------------------------------- function statements -----------------
-            #['HOW IZ I', r'^HOW IZ I$', 'Function Definition'],
-            #['IF U SAY SO', r'^IF U SAY SO$', 'Function Delimiter'],
-            #['GTFO', r'^GTFO$', 'Function Return'],
-            #['FOUND YR', r'^FOUND YR$', 'Function Return Value'],
-            #['I IZ', r'^I IZ$', 'Function Return Value'],
-            #['MKAY', r'^MKAY$', 'End of Code Delimiter']
-
             ['HOW IZ I', 'Function Definition'],
             ['IF U SAY SO', 'Function Delimiter'],
             ['GTFO', 'Function Return'],
@@ -186,6 +192,9 @@ def getLexemes(code): # function for getting lexemes
     ]
 
     code = stripComments(code) # we will strip comments first before passing to getLexemes() function
+    if code is None: # if there is an error while stripping code, return None
+        return None # Return None since there's an error
+        
     lines = code.split("\n") # we split the line into an array ; delimeter is new line
 
     if "HAI" == lines[0] and "KTHXBYE" == lines[-1]: # if HAI is in beginning and KTHXBYE at the end, that's when we do the rest
@@ -208,8 +217,9 @@ def getLexemes(code): # function for getting lexemes
                         lexical_table.append(['"', "String Delimiter"]) # add the closing quotation literal to lexical table;
                         whole_string = whole_string[closing + 1:].strip() # removes
                     else:
-                        print("Warning: unterminated string literal")
-                        whole_string = ""
+                        # print("Warning: unterminated string literal")
+                        # whole_string = ""
+                        return None # unterminated string error
                     matched = True
 
                 if not matched: # if after going through yarn literal still not match, we check each item in pl_element
@@ -224,8 +234,11 @@ def getLexemes(code): # function for getting lexemes
                                 parts = whole_string.split()  # we split the remaining parts (var name can't have space)
                                 if parts: # the first is the var name (the one right after I HAS A)
                                     var_name = parts[0]
-                                    lexical_table.append([var_name, "Identifier"]) # then we add that to lexical table
-                                    whole_string = whole_string[len(var_name):].strip()
+                                    if re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', var_name):
+                                        lexical_table.append([var_name, "Variable Identifier"]) # then we add that to lexical table
+                                        whole_string = whole_string[len(var_name):].strip()
+                                    else:
+                                        return None
 
                             matched = True # we find match
                             break
@@ -236,22 +249,19 @@ def getLexemes(code): # function for getting lexemes
                     remaining  = parts[1].strip() if len(parts) > 1 else ""
 
                     if re.match(r'^-?[0-9]+$', token):           # number literal
-                        lexical_table.append([int(token), "NUMBR Literal"])
+                        lexical_table.append([token, "NUMBR Literal"])
                     elif re.match(r'^(WIN|FAIL)$', token):
                         lexical_table.append([token, "TROOF Literal"])
                     elif re.match(r'^-?[0-9]+\.[0-9]+$', token):
-                        lexical_table.append([float(token), "NUMBAR Literal"])
-                    # (YARN strings are handled before this block — no branch needed here)
-                    elif re.match(r'^(TROOF|NOOB|NUMBR|NUMBAR|YARN)$', token): # must be checked before variable identifiers
+                        lexical_table.append([token, "NUMBAR Literal"])
+                    elif re.match(r'^(TROOF|NOOB|NUMBR|NUMBAR|YARN)$', token): # types
                         lexical_table.append([token, "TYPE"]) 
                     elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token) and len(lexical_table) > 0 and lexical_table[-1][0] in ('HOW IZ I', 'I IZ'): # function name
                         lexical_table.append([token, "Function Identifier"])
                     elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token) and len(lexical_table) > 0 and lexical_table[-1][0] in ('IM IN YR', 'IM OUTTA YR'): # loop label
                         lexical_table.append([token, "Loop Label"])
-                    elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token):  # varident
+                    elif re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', token): # General variable identifier reference
                         lexical_table.append([token, "Variable Identifier"])
-                    # elif re.match(r'^(TROOF|NOOB|NUMBR|NUMBAR|YARN)$', token):
-                        # lexical_table.append([token, "TYPE"])
                     else:
                         print(f"Warning: unrecognized token '{token}'")
 
