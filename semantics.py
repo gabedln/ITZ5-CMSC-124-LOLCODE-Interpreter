@@ -364,10 +364,11 @@ def evalComparison(operator, op1, op2):
     # - no automatic typecasting, e.g. yarn to numbr/numbar
     # - NUMBR comparison uses integer math
     # - NUMBAR comparison uses floating-point math
-    #both saem
-
-    #operator2 for relational operations
-    if getDataType(op1) != getDataType(op2):
+    
+    #check if both are numeric
+    if (getDataType(op1) == "NUMBR" or getDataType(op1) == "NUMBAR") and (getDataType(op2) == "NUMBR" or getDataType(op2) == "NUMBAR"):
+        pass
+    elif getDataType(op1) != getDataType(op2): # no automatic typecasting
         print("Semantic Error: no automatic typecasting for " + getDataType(op1) + " '" + str(op1) + "' and " + getDataType(op2) + " '" + str(op2) + "'")
         return None
     
