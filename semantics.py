@@ -324,7 +324,7 @@ def evalArithmetic(operator, op1, op2):
 
 def evalBoolean(operator, op1, op2):
 
-    #in all of, loop through x in op1 because all of handles a list, then if there is one considered false
+    # loop through x in op1 because 'all of' handles a list, then if there is one considered false
     #in the operands, return false, else if all are true, return true
     if operator == "ALL OF":
         for x in op1:
@@ -343,19 +343,19 @@ def evalBoolean(operator, op1, op2):
     op1 = typecast(op1, "TROOF")
     op2 = typecast(op2, "TROOF")
 
-    #use and python which is equivalent to both of of lolcode
+    #use pythons 'and' which is equivalent to both of of lolcode
     if operator == "BOTH OF":
         return op1 and op2
 
-    #use or which is equilvalent to either of of lolcode
+    #use pythons 'or' which is equilvalent to either of of lolcode
     if operator == "EITHER OF":
         return op1 or op2
 
-    #use  not equal to which is equivalent to won of in lol code
+    #use pythons 'not equal' to which is equivalent to won of in lol code
     if operator == "WON OF":
         return op1 != op2
 
-    #if not typecase troof into NOT so the op1 gets its bool value and then use not in python to negate 
+    #typecase troof into NOT so the op1 gets its bool value and then use pythons 'not' to negate 
     if operator == "NOT":
         op1 = typecast(op1, "TROOF")
         return not op1
