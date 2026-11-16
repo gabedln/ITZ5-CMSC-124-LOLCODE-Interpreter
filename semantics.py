@@ -262,7 +262,8 @@ def isKeyword(token, words):
 
 #check if start ng expression or value
 def isValue(token):
-    return token[1] in ["NUMBR Literal", "NUMBAR Literal", "TROOF Literal", "Variable Identifier", "String Delimiter"] or isKeyword(token, ARITHMETIC + BOOLEAN + COMPARISON + ["SMOOSH", "MAEK"])
+    return token[1] in ["NUMBR Literal", "NUMBAR Literal", "TROOF Literal", "Variable Identifier", 
+                        "String Delimiter"] or isKeyword(token, ARITHMETIC + BOOLEAN + COMPARISON + ["SMOOSH", "MAEK"])
 
 #converts a lexer token
 def getLiteralValue(token):
@@ -321,8 +322,44 @@ def evalArithmetic(operator, op1, op2):
     elif operator == "SMALLR OF":
         return min(op1, op2)
 
-def evalBoolean(tokens, i):
-    pass
+def evalBoolean(operator, op1, op2):
+
+    #in all of, loop through x in op1 because all of handles a list, then if there is one considered false
+    #in the operands, return false, else if all are true, return true
+    if operator == "ALL OF":
+        for x in op1:
+            if typecast(x, "TROOF") == False:
+                return False
+        return True
+
+    #same logic as all of, only find a one operand with true value and then return true immediately 
+    if operator == "ANY OF":
+        for x in op1:
+            if typecast(x, "TROOF") == True:
+                return True
+        return False
+
+    #we typecast it both operands to troof for lolcode boolean
+    op1 = typecast(op1, "TROOF")
+    op2 = typecast(op2, "TROOF")
+
+    #use and python which is equivalent to both of of lolcode
+    if operator == "BOTH OF":
+        return op1 and op2
+
+    #use or which is equilvalent to either of of lolcode
+    if operator == "EITHER OF":
+        return op1 or op2
+
+    #use  not equal to which is equivalent to won of in lol code
+    if operator == "WON OF":
+        return op1 != op2
+
+    #if not typecase troof into NOT so the op1 gets its bool value and then use not in python to negate 
+    if operator == "NOT":
+        op1 = typecast(op1, "TROOF")
+        return not op1
+
 
 def evalComparison(tokens, i):
     pass
@@ -380,7 +417,6 @@ def evalExpression(tokens, i):
 
         #if var, find its value in the symbol table
         elif token_type == "Variable Identifier":
-
             var_index = findVar(token_value)
 
             #if not found then undeclared var siya
