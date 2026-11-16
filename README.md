@@ -59,7 +59,7 @@ This project implements An interpreter for **LOLCODE** built in Python for **CMS
 
 ## Contributors & Team Members
 
-**CMSC 124 — Section ITZ5**  
+**CMSC 124 — Section ST2L, Group ITZ5**  
 *Design and Implementation of Programming Languages*  
 Institute of Computer Science, University of the Philippines Los Baños
 
