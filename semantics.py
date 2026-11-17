@@ -110,8 +110,6 @@ y IS NOW A NUMBAR
 VISIBLE "x is " x " and y is " y
 KTHXBYE"""
 
-
-
 symbol_table = [] #[identifier, value, data_type] -> ["a", 10, "NUMBR"]
 console_output = [] #para sa console (6) ng GUI
 
@@ -364,7 +362,7 @@ def evalComparison(operator, op1, op2):
     # - no automatic typecasting, e.g. yarn to numbr/numbar
     # - NUMBR comparison uses integer math
     # - NUMBAR comparison uses floating-point math
-    
+
     #check if both are numeric
     if (getDataType(op1) == "NUMBR" or getDataType(op1) == "NUMBAR") and (getDataType(op2) == "NUMBR" or getDataType(op2) == "NUMBAR"):
         pass
@@ -376,7 +374,6 @@ def evalComparison(operator, op1, op2):
         return op1 == op2
     elif operator == "DIFFRINT":
         return op1 != op2
-
 
 #since buong program nasa tokens, need hanapin yung end for eval expression
 def findExpressionEnd(tokens, i):
@@ -521,9 +518,34 @@ def evalExpression(tokens, i):
 
     #result and index of the next token
     return values[0], end
- 
+
+#maek expression a type, maek expression type
 def evalMaek(tokens, i):
-    pass
+    #evaluate the expression after "Maek"
+    #j yung index kung when nagend expression
+    value, j = evalExpression(tokens, i + 1)
+    if j == i + 1: #walang expression after maek
+        return None, i
+
+    # since a is optional.. pag may a move to the next token
+    if j < len(tokens) and isKeyword(tokens[j], ["A"]):
+        j += 1
+
+    #check if token is a valid data type 
+    if j >= len(tokens) or tokens[j][0] not in TYPES:
+        print("Semantic Error: MAEK doesn't have a type")
+        return None, i
+
+    #typecast to needed type tokens[j][0]
+    return typecast(value, tokens[j][0], True), j + 1
+
+#value of expression, return tayo ng val and next index
+def evalValue(tokens, i):
+    if i < len(tokens) and isKeyword(tokens[i], ["MAEK"]):
+        #if token is MAEK, evalMaek
+        return evalMaek(tokens, i)
+    #if not proceed agad sa evalExpr
+    return evalExpression(tokens, i)
 
 # TEST FOR EVAL ARITHMETIC
 test_tokens = [
