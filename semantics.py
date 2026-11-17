@@ -810,6 +810,9 @@ def main(code):
 
     return exec_cond_block(tokens, i, len(tokens))
 
+#guide for missing semantics
+#smoosh, loops, functions, switch, gtfo, return handling
+
 # TEST FOR EVAL ARITHMETIC
 test_tokens = [
     ["VISIBLE", "Output Keyword"],
