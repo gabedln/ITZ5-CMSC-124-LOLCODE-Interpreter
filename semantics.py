@@ -88,6 +88,7 @@
 
 # 6. Functions (p. 8)
 
+
 from lexical_analyzer import getLexemes
 import re # import regex
 from decimal import Decimal, ROUND_DOWN # for exact truncation of NUMBAR -> YARN
@@ -793,12 +794,12 @@ def main(code):
         print("Lexical Error: invalid program")
         return False
 
+    #make a flat list of token from lexical analyzer 
     tokens = []
     for line in lexical_table[1:-1]:
         for token in line:
             tokens.append(token)
-
-        tokens.append(["\n", "Line Break"])
+    i = 0
 
     #wazzup block
     if i < len(tokens) and isKeyword(tokens[i], ["WAZZUP"]):
