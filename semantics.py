@@ -2,6 +2,20 @@
 # https://github.com/amtuazon4/PyGUI/blob/main/source%20code/check_semantics.py
 # Project Requirement # 3 - Semantics
 
+# Assumptions and Formatting Rules: (don't delete)
+# 1) LOLCODE source files should have .lol extension
+# 2) Should start with HAI and end in KTHXBYE, no need for version number
+# 3) You may assume ONE LINE CONTAINS ONE STATEMENT ONLY
+# 4) There is no need to support SOFT COMMAND BREAKS, EACH STATEMENT IS DELIMITED BY NEW LINE
+# 5) Assume that there is only one whitespace in between keywords
+# 6) Indentation is IRRELEVANT
+# 7) Spaces inside YARN (string) should be RETAINED
+# 8) Comments are NOT CONSIDERED STATEMENTS and MUST BE IGNORED!!
+# 9) Keywords OBTW and TLDR MUST HAVE THEIR OWN LINES (bawal ung OBTW <comment> TLDR)
+# 10) Variables are declared in WAZZUP BUHBYE ( so dapat after HAI, WAZZUP BUHBYE agad OR NONE AT ALL)
+# 11) All variables must be declared inside the WAZZUP portion of the program. The WAZZUP clause is found at the beginning of the program, after HAI.
+# 12) Operations are in PREFIX NOTATION (Important)
+
 #SEMANTICS CHECKLIST/THINGS TO CONSIDER
 
 #1. State & Program Structure (p. 2-3)
@@ -73,7 +87,6 @@
 # b. WTF? -> IT is important
 
 # 6. Functions (p. 8)
-
 
 from lexical_analyzer import getLexemes
 import re # import regex
@@ -780,12 +793,12 @@ def main(code):
         print("Lexical Error: invalid program")
         return False
 
-    #make a flat list of token from lexical analyzer 
     tokens = []
     for line in lexical_table[1:-1]:
         for token in line:
             tokens.append(token)
-    i = 0
+
+        tokens.append(["\n", "Line Break"])
 
     #wazzup block
     if i < len(tokens) and isKeyword(tokens[i], ["WAZZUP"]):
