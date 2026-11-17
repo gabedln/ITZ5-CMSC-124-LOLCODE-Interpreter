@@ -287,10 +287,16 @@ def evalArithmetic(operator, op1, op2):
     op2_type = getDataType(op2)
 
     if op1_type not in ["NUMBR", "NUMBAR"]:
-        op1 = typecast(op1, "NUMBAR")
+        if op1_type == "YARN" and "." not in op1:
+            op1 = typecast(op1, "NUMBR")
+        else:
+            op1 = typecast(op1, "NUMBAR")
 
     if op2_type not in ["NUMBR", "NUMBAR"]:
-        op2 = typecast(op2, "NUMBAR")
+        if op2_type == "YARN" and "." not in op2:
+            op2 = typecast(op2, "NUMBR")
+        else:
+            op2 = typecast(op2, "NUMBAR")
 
     if op1 is None or op2 is None:
         return None
@@ -306,6 +312,9 @@ def evalArithmetic(operator, op1, op2):
         if op2 == 0:
             print("Semantic Error: division by zero")
             return None
+        #kapag parehong NUMBR, NUMBR din ang result
+        if getDataType(op1) == "NUMBR" and getDataType(op2) == "NUMBR":
+            return int(op1 / op2)
         return op1 / op2
 
     elif operator == "MOD OF":
@@ -547,6 +556,260 @@ def evalValue(tokens, i):
     #if not proceed agad sa evalExpr
     return evalExpression(tokens, i)
 
+#I HAS <var> ITZ <val>
+def declaration(tokens, i):
+    if i + 1 >= len(tokens):
+        print("Semantic Error: variable name is missing")
+        return i
+    var_name = tokens[i + 1][0]
+
+    if findVar(var_name) != -1:
+        print("Semantic Error: redeclared variable", var_name)
+        return i
+
+    j = i + 2
+    value = None #NOOB default
+
+    #optional ITZ, evaluate if meron
+    if j < len(tokens) and isKeyword(tokens[j], ["ITZ"]):
+        value, next_j = evalValue(tokens, j + 1)
+        if next_j == j + 1: #may ITZ pero walang value na binigay
+            return i
+        j = next_j
+
+    storeVal(var_name, value)
+    return j
+
+def assignment(tokens, i):
+    var_name = tokens[i][0]
+
+    #check if var is declared
+    if findVar(var_name) == -1:
+        print("Semantic Error: undeclared variable", var_name)
+        return i
+
+    value, j = evalValue(tokens, i + 2)
+    if j == i + 2: #walang value na binigay
+        return i
+
+    storeVal(var_name, value)
+    return j
+
+# var IS NOW A type, change type mostly typecasting ulit
+def recast(tokens, i):
+    var_name = tokens[i][0]
+    var_index = findVar(var_name)
+
+    if var_index == -1:
+        print("Semantic Error: undeclared variable", var_name)
+        return i
+
+    if i + 2 >= len(tokens) or tokens[i + 2][0] not in TYPES:
+        print("Semantic Error: new type is missing")
+        return i
+
+    new_type = tokens[i + 2][0]
+    result = typecast(symbol_table[var_index][1], new_type, True)
+
+    #None lang ang return kapag hindi nacast
+    if result is None and new_type != "NOOB":
+        return i
+
+    storeVal(var_name, result)
+    return i + 3
+
+def visible(tokens, i):
+    output = ""
+    j = i + 1
+
+    while True:
+        value, next_j = evalValue(tokens, j)
+        if next_j == j: #walang nabasang expression
+            return i
+
+        #implicit typecast sa YARN
+        text = typecast(value, "YARN")
+        if text is None:
+            return i
+
+        output += text
+        j = next_j
+
+        #check if next token starts an assignment or recasting
+        if j + 1 < len(tokens) and tokens[j][1] == "Variable Identifier":
+            if isKeyword(tokens[j + 1], ["R", "IS NOW A"]):
+                break
+
+        #kapag may + sa kasunod meron isa pang operand
+        if j < len(tokens) and isKeyword(tokens[j], ["+"]):
+            j += 1
+        elif j < len(tokens) and isValue(tokens[j]):
+            continue
+        else:
+            break
+
+    print(output)
+    console_output.append(output)
+    return j
+
+#GIMMEH var
+def gimmeh(tokens, i):
+    #check if may var
+    if i + 1 >= len(tokens) or tokens[i + 1][1] != "Variable Identifier":
+        print("Semantic Error: GIMMEH needs a variable")
+        return i
+
+    #find if existing yung hinihingi
+    var_name = tokens[i + 1][0]
+    if findVar(var_name) == -1:
+        print("Semantic Error: undeclared variable", var_name)
+        return i
+
+    storeVal(var_name, input()) #PLACEHOLDER will change pag nakita na gui
+    return i + 2
+
+#lagay result sa IT
+def exprStatement(tokens, i):
+    value, j = evalValue(tokens, i)
+    if j == i:
+        return i
+
+    storeVal("IT", value)
+    return j
+
+#find OIC and NO WAI (if existing) for O RLY / WTF block
+#returns no wait and oic position
+def findConditionalEnd(tokens, i):
+    cond_blocks = 0
+    no_wai = -1
+    j = i
+
+    while j < len(tokens):
+        if isKeyword(tokens[j], ["O RLY?", "WTF?"]): #parehong nagtatapos sa OIC
+            cond_blocks += 1
+        elif isKeyword(tokens[j], ["OIC"]):
+            cond_blocks -= 1
+            if cond_blocks == 0:
+                return no_wai, j
+        elif isKeyword(tokens[j], ["NO WAI"]) and cond_blocks == 1:
+            no_wai = j
+        j += 1
+
+    return no_wai, -1 #walang OIC
+
+def statement(tokens, i):
+    token = tokens[i]
+
+    if isKeyword(token, ["VISIBLE"]):
+        return visible(tokens, i)
+    if isKeyword(token, ["GIMMEH"]):
+        return gimmeh(tokens, i)
+    if isKeyword(token, ["O RLY?"]):
+        return conditional(tokens, i)
+
+    #lahat ng variable ay dapat declared sa WAZZUP onlyz
+    if isKeyword(token, ["I HAS A"]):
+        print("Semantic Error: variables must be declared inside WAZZUP")
+        return i
+
+    #assignment or IS NOW A, nagsisimula sa variable
+    if token[1] == "Variable Identifier" and i + 1 < len(tokens):
+        if isKeyword(tokens[i + 1], ["R"]):
+            return assignment(tokens, i)
+        if isKeyword(tokens[i + 1], ["IS NOW A"]):
+            return recast(tokens, i)
+        
+    #proceed sa expression statement (kasama ang MAEK)
+    if isValue(token):
+        return exprStatement(tokens, i)
+
+    print("Semantic Error: unexpected token", token[0])
+    return i
+
+
+def exec_cond_block(tokens, start, end):
+    i = start
+
+    while i < end:
+        next_i = statement(tokens, i)
+        if next_i == i: #walang progress, ibig sabihin may error
+            return False
+        i = next_i
+
+    return True
+
+
+#note: YA RLY if, NO WAI else
+def conditional(tokens, i):
+    no_wai, oic = findConditionalEnd(tokens, i)
+
+    if oic == -1:
+        print("Semantic Error: missing OIC")
+        return i
+
+    if i + 1 >= len(tokens) or not isKeyword(tokens[i + 1], ["YA RLY"]):
+        print("Semantic Error: missing YA RLY")
+        return i
+
+    #hanggang saan yung if block (NO WAI kung meron, OIC kung wala)
+    if no_wai != -1:
+        if_end = no_wai
+    else:
+        if_end = oic
+
+    it_value = symbol_table[findVar("IT")][1]
+
+    if typecast(it_value, "TROOF") == True:
+        if exec_cond_block(tokens, i + 2, if_end) == False:
+            return i
+    elif no_wai != -1:
+        if exec_cond_block(tokens, no_wai + 1, oic) == False:
+            return i
+
+    return oic + 1 #next index after OIC
+
+def main(code):
+    # reset table
+    #it's default is always none and noob
+    symbol_table.clear()
+    console_output.clear()
+    symbol_table.append(["IT", None, "NOOB"])
+
+    lexical_table = getLexemes(code)
+    if lexical_table is None: #error from lexical
+        print("Lexical Error: invalid program")
+        return False
+
+    #make a flat list of token from lexical analyzer 
+    tokens = []
+    for line in lexical_table[1:-1]:
+        for token in line:
+            tokens.append(token)
+    i = 0
+
+    #wazzup block
+    if i < len(tokens) and isKeyword(tokens[i], ["WAZZUP"]):
+        i += 1
+
+        while i < len(tokens) and not isKeyword(tokens[i], ["BUHBYE"]):
+            if not isKeyword(tokens[i], ["I HAS A"]):
+                print("Semantic Error: only I HAS A is allowed inside WAZZUP")
+
+                return False
+
+            next_i = declaration(tokens, i)
+            if next_i == i:
+                return False
+            i = next_i
+
+        if i >= len(tokens): #walang BUHBYE
+            print("Semantic Error: WAZZUP is missing BUHBYE")
+            return False
+
+        i += 1 #lampas sa BUHBYE
+
+    return exec_cond_block(tokens, i, len(tokens))
+
 # TEST FOR EVAL ARITHMETIC
 test_tokens = [
     ["VISIBLE", "Output Keyword"],
@@ -566,3 +829,5 @@ result, next_index = evalExpression(test_tokens, 1)
 print(result)
 print(next_index)
 print(test_tokens[next_index])
+
+main(valid_code3)
