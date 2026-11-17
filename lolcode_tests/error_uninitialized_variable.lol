@@ -1,0 +1,7 @@
+HAI
+    WAZZUP
+        I HAS A x
+    BUHBYE
+
+    VISIBLE x
+KTHXBYE

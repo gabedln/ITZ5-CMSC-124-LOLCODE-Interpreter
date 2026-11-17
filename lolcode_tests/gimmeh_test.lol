@@ -1,0 +1,9 @@
+HAI
+WAZZUP
+    I HAS A name
+BUHBYE
+
+GIMMEH name
+VISIBLE "Hello, " + name
+
+KTHXBYE

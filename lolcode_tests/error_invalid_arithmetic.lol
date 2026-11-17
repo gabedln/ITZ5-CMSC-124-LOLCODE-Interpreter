@@ -1,0 +1,3 @@
+HAI
+    VISIBLE SUM OF "hello" AN 5
+KTHXBYE
