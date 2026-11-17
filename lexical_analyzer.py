@@ -1,17 +1,5 @@
 import re  # import regex
 
-# ------------- example code -----------
-code = """
-HAI
-  WAZZUP
-    I HAS A x ITZ 1
-  BUHBYE
-  VISIBLE x
-  I HAS A y ITZ 2
-  VISIBLE y
-KTHXBYE
-"""
-
 # ------------------------------------------------------------------------------------------------------------
 # FUNCTION FOR DEALING WITH COMMENTS:
 # comments are not considered statements and must be ignored; we will STRIP COMMENTS AWAY before passing to getLexemes() function
@@ -239,15 +227,13 @@ def getLexemes(code): # function for getting lexemes
         return None
 
     # ----- printing the lexical table --------------
-    print("\n-----------Lexical Table----------")
-    for line in lexical_table:
-        for token in line:
-            print(f"{token[0]:<10} | {token[1]}")
-    print("----------------------------------")
+    # print("\n-----------Lexical Table----------")
+    # for line in lexical_table:
+    #     for token in line:
+    #         print(f"{token[0]:<10} | {token[1]}")
+    # print("----------------------------------")
 
     return lexical_table
-
-getLexemes(code) # call the function to get lexemes for the example code
 
 # Sources:
 # https://github.com/christianrfg/lexical-analyzer/blob/master/LexicalAnalyzer.py
