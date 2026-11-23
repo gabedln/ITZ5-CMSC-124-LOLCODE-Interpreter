@@ -715,12 +715,12 @@ def parseProgram(lexical_table):
         return None, syntax_error
 
     tree = {"declarations": declarations, "body": body, "functions": functions}
-    return tree
+    return tree, ""
 
 
 def checkSyntax(code): # function that returns True if syntax is valid; else returns False
     lexical_table = getLexemes(code) # we use lexical analysis from previous milestone (use getLexemes function)
-    tree = parseProgram(lexical_table)
+    tree, message = parseProgram(lexical_table)
 
     return (tree is not None) # if tree is not None, then return True; else False
 # -------------------------------------------------------------------------------------------------------------------------------------
