@@ -1,109 +1,14 @@
 # Sources:
-# https://github.com/amtuazon4/PyGUI/blob/main/source%20code/check_semantics.py
-# Project Requirement # 3 - Semantics
-
-# Assumptions and Formatting Rules: (don't delete)
-# 1) LOLCODE source files should have .lol extension
-# 2) Should start with HAI and end in KTHXBYE, no need for version number
-# 3) You may assume ONE LINE CONTAINS ONE STATEMENT ONLY
-# 4) There is no need to support SOFT COMMAND BREAKS, EACH STATEMENT IS DELIMITED BY NEW LINE
-# 5) Assume that there is only one whitespace in between keywords
-# 6) Indentation is IRRELEVANT
-# 7) Spaces inside YARN (string) should be RETAINED
-# 8) Comments are NOT CONSIDERED STATEMENTS and MUST BE IGNORED!!
-# 9) Keywords OBTW and TLDR MUST HAVE THEIR OWN LINES (bawal ung OBTW <comment> TLDR)
-# 10) Variables are declared in WAZZUP BUHBYE ( so dapat after HAI, WAZZUP BUHBYE agad OR NONE AT ALL)
-# 11) All variables must be declared inside the WAZZUP portion of the program. The WAZZUP clause is found at the beginning of the program, after HAI.
-# 12) Operations are in PREFIX NOTATION (Important)
-
-#SEMANTICS CHECKLIST/THINGS TO CONSIDER
-
-#1. State & Program Structure (p. 2-3)
-# a. Variables
-# - remember variables current type and value
-#   (var -> type, value)
-# - variables are dynamically typed
-# - NOOB is default datatype
-# - check for redeclared/undeclared variables
-# - all variables must be inside WAZZUP (checked na ng syntax analyzer)
-
-# b. IT (p. 2, 6)
-# - implicit variable, always exists
-# - initial type and value = NOOB, NONE
-# - sasalo ng result ng expression na walang variable
-# - O RLY? and WTF? reads IT
-# - MAEK and function return values go to IT
-
-# c. Declaration (p. 2)
-# - I HAS A x -> NOOB, None
-# - I HAS A x ITZ "some" -> store value and type
-# - I HAS A x ITZ y -> copy y's value and type
-# - I HAS A x ITZ SUM OF 5 AN 4 -> evaluate muna bago store
-
-#2. Data Types (p. 3, 5)
-# a. Data types
-# - NOOB, TROOF, NUMBR, NUMBAR, YARN
-# - variables can change datatype depending on assigned value
-
-# b. Typecasting
-# - implicit = automatic conversion
-# - explicit = MAEK/IS NOW A
-# - MAEK -> result goes to IT, di nababago si var
-# - IS NOW A -> nababago si var
-# - NOOB can only be implicitly cast to TROOF
-# - explicit casting of NOOB is allowed
-
-#3. Operations (p. 3-5)
-# a. Arithmetic
-# - SUM, DIFF, PRODUKT, QUOSHUNT, MOD, BIGGR, SMALLR
-# - evaluate operands first
-# - if not NUMBR/NUMBAR, implicitly!!! typecast
-# - if both NUMBR -> result is NUMBR
-# - if at least one NUMBAR -> result is NUMBAR
-# - check division by 0 -> add a error checker
-
-# b. Boolean
-# - BOTH OF, EITHER OF, WON OF, NOT
-# - ALL OF and ANY OF can have multiple operands
-# - ALL OF/ANY OF read operands until MKAY
-# - convert operands to TROOF first and result is always TROOF
-# - ALL OF and ANY OF can't be nested (checked na ng syntax analyzer)
-# - can contain other bool
-
-# c. Comparison
-# - BOTH SAEM, DIFFRINT
-# - no automatic typecasting, e.g. yarn to numbr/numbar
-# - NUMBR comparison uses integer math
-# - NUMBAR comparison uses floating-point math
-
-#4. Statements (p. 3, 5-6)
-# a. VISIBLE
-# - operands to YARN
-# - concatenate all operands with +
-# - automatically adds newline
-
-# 5. Flow Control (p. 6-7)
-# a. O RLY -> IT is important
-# b. WTF? -> IT is important
-# c. loops -> UPPIN/NERFIN, TIL/WILE, GTFO
-
-# 6. Functions (p. 8)
-# - functions cannot access variables outside of it (sariling symbol table)
-# - arguments are pass-by-value
-# - FOUND YR returns a value, GTFO returns NOOB, walang return = NOOB
-# - return value goes to IT
-
-# HOW IT WORKS:
-# - hindi na natin binabasa yung raw lexeme table, yung SYNTAX TREE na galing sa syntax_analyzer.py yung ine-execute natin
-#   (yung format ng tree nasa taas ng syntax_analyzer.py)
-# - values are stored as python values, yung data type ay kinukuha sa getDataType()
-#   None = NOOB, True/False = TROOF, int = NUMBR, float = NUMBAR, str = YARN
+# https://github.com/christianrfg/lexical-analyzer/blob/master/LexicalAnalyzer.py
+# https://github.com/amtuazon4/PyGUI
+# https://regex101.com/
+# Project Requirement # 2 - Syntax Analyzer
 
 import re  # import regex
 from decimal import ROUND_DOWN, Decimal  # for exact truncation of NUMBAR -> YARN
 
 symbol_table = [] #[identifier, value, data_type] -> ["a", 10, "NUMBR"]
-console_output = [] #para sa console (6) ng GUI
+console_output = [] # para sa console (6) ng GUI
 functions = {} # function name -> [parameters, function_block] (galing sa syntax tree)
 
 input_function = input   # GIMMEH, papalitan ng GUI ng dialog box
