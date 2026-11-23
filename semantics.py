@@ -396,14 +396,6 @@ def evalComparison(operator, op1, op2):
     # - NUMBR comparison uses integer math
     # - NUMBAR comparison uses floating-point math
 
-    # compare yarn as number
-    if getDataType(op1) == "YARN" and (getDataType(op2) == "NUMBR" or getDataType(op2) == "NUMBAR"):
-        if re.match(r'^-?[0-9]+(\.[0-9]+)?$', op1):
-            op1 = float(op1)
-    if getDataType(op2) == "YARN" and (getDataType(op1) == "NUMBR" or getDataType(op1) == "NUMBAR"):
-        if re.match(r'^-?[0-9]+(\.[0-9]+)?$', op2):
-            op2 = float(op2)
-
     #check if both are numeric
     if (getDataType(op1) == "NUMBR" or getDataType(op1) == "NUMBAR") and (getDataType(op2) == "NUMBR" or getDataType(op2) == "NUMBAR"):
         if op1 == op2:

@@ -217,10 +217,7 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
 
     # explicit typecasting: MAEK <x> [A] <type>
     if lexeme == "MAEK":
-        i = i + 1 # move past MAEK
-        if i < len(tokens) and tokens[i][0] == "A": # pwede rin mauna yung A (MAEK A <x> <type>, based sa test cases ng prof)
-            i = i + 1
-        value, i = parseExpression(tokens, i, inside_all_any, inside_smoosh)
+        value, i = parseExpression(tokens, i + 1, inside_all_any, inside_smoosh)
         if i == -1:
             return None, -1
         if i < len(tokens) and tokens[i][0] == "A": # since A is optional.. pag may A move to the next token
@@ -261,18 +258,17 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
                     return None, -1
                 arguments.append(argument)
         if i >= len(tokens):
-            next_i = i
-        elif tokens[i][0] != "MKAY":
             error("Function call is missing MKAY")
             return None, -1
-        else:
-            next_i = i + 1
+        if tokens[i][0] != "MKAY":
+            error("Function call is missing MKAY")
+            return None, -1
         # check kung tama yung bilang ng arguments (kapag defined yung function)
         if name in function_arity:
             if function_arity[name] != len(arguments):
                 error("Function " + name + " expects " + str(function_arity[name]) + " argument(s), got " + str(len(arguments)))
                 return None, -1
-        return ["I IZ", name, arguments], next_i
+        return ["I IZ", name, arguments], i + 1
 
     error("Expected an expression, found " + lexeme)
     return None, -1
@@ -367,9 +363,9 @@ def parseOutput(tokens): # VISIBLE has infinite arity, meaning it can take n num
                 return None
             add_newline = False
             i = i + 1
-        elif tokens[i][0] == "+" or tokens[i][0] == "AN": # each operand is separated by + (or AN, based sa test cases ng prof)
+        elif tokens[i][0] == "+": # each operand is separated by +
             if i + 1 >= len(tokens):
-                error("Missing operand after " + tokens[i][0] + " in VISIBLE")
+                error("Missing operand after + in VISIBLE")
                 return None
             expression, i = parseExpression(tokens, i + 1)
             if i == -1:
