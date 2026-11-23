@@ -474,8 +474,6 @@ def evalExpression(node):
     if kind == "I IZ":
         return callFunction(node[1], node[2])
 
-    error("unknown expression " + kind)
-
 def callFunction(name, argument_nodes):
     global symbol_table
 
@@ -495,10 +493,8 @@ def callFunction(name, argument_nodes):
     for k in range(len(parameters)):
         storeVal(parameters[k], arguments[k]) #pass by value
 
-    try:
-        result = exec_cond_block(function_block)
-    finally: #ibalik yung symbol table ng caller kahit may error
-        symbol_table = saved_table
+    result = exec_cond_block(function_block)
+    symbol_table = saved_table #ibalik yung symbol table ng caller
 
     #walang return or GTFO = NOOB
     if result is not None and result != "GTFO":
@@ -572,10 +568,7 @@ def gimmeh(node):
     if findVar(var_name) == -1:
         error("undeclared variable " + var_name)
 
-    value = input_function(var_name) #the input value is always a YARN
-    if value is None: #nag-cancel sa dialog
-        value = ""
-    storeVal(var_name, str(value))
+    storeVal(var_name, input_function(var_name)) #the input value is always a YARN
 
 #lagay result sa IT
 def exprStatement(node):
