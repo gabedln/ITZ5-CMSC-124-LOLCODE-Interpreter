@@ -99,8 +99,8 @@
 # - values are stored as python values, yung data type ay kinukuha sa getDataType()
 #   None = NOOB, True/False = TROOF, int = NUMBR, float = NUMBAR, str = YARN
 
-import re # import regex
-from decimal import Decimal, ROUND_DOWN # for exact truncation of NUMBAR -> YARN
+import re  # import regex
+from decimal import ROUND_DOWN, Decimal  # for exact truncation of NUMBAR -> YARN
 
 symbol_table = [] #[identifier, value, data_type] -> ["a", 10, "NUMBR"]
 console_output = [] #para sa console (6) ng GUI
@@ -217,10 +217,7 @@ def typecast(val, new_data_type, explicit=False):
             return str(Decimal(str(val)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)) # truncate to 2 decimal places
         #consider troof also, kapag 0 false, other value true
         if new_data_type == "TROOF":
-            if val == 0:
-                return False
-            else:
-                return True
+            return val != 0
 
     #NUMBR TYPE CASTING RULES
     if data_type == "NUMBR":
@@ -232,19 +229,13 @@ def typecast(val, new_data_type, explicit=False):
             return str(val)
         #consider troof also, kapag 0 false, other value true
         if new_data_type == "TROOF":
-            if val == 0:
-                return False
-            else:
-                return True
+            return val != 0
 
     #YARN TYPECASTING RULES
     if data_type == "YARN":
         if new_data_type == "TROOF":
             #empty string are cast to fail
-            if val == "":
-                return False
-            else: #if not cast to win automatically
-                return True
+            return val != ""
 
         if new_data_type == "NUMBR" or new_data_type == "NUMBAR":
             for char in val:
@@ -303,17 +294,13 @@ def evalArithmetic(operator, op1, op2):
 
     #TROOF is cast to NUMBR (WIN = 1, FAIL = 0)
     if op1_type not in ["NUMBR", "NUMBAR"]:
-        if op1_type == "YARN" and "." not in op1:
-            op1 = typecast(op1, "NUMBR")
-        elif op1_type == "TROOF":
+        if (op1_type == "YARN" and "." not in op1) or (op1_type == "TROOF"):
             op1 = typecast(op1, "NUMBR")
         else:
             op1 = typecast(op1, "NUMBAR")
 
     if op2_type not in ["NUMBR", "NUMBAR"]:
-        if op2_type == "YARN" and "." not in op2:
-            op2 = typecast(op2, "NUMBR")
-        elif op2_type == "TROOF":
+        if (op2_type == "YARN" and "." not in op2) or (op2_type == "TROOF"):
             op2 = typecast(op2, "NUMBR")
         else:
             op2 = typecast(op2, "NUMBAR")
@@ -369,10 +356,7 @@ def evalBoolean(operator, op1, op2):
     #typecase troof into NOT so the op1 gets its bool value and then use pythons 'not' to negate
     if operator == "NOT":
         op1 = typecast(op1, "TROOF")
-        if op1 == True:
-            return False
-        else:
-            return True
+        return op1 != True
 
     #we typecast it both operands to troof for lolcode boolean
     op1 = typecast(op1, "TROOF")
@@ -403,15 +387,9 @@ def evalComparison(operator, op1, op2):
         error("no automatic typecasting for " + getDataType(op1) + " '" + str(op1) + "' and " + getDataType(op2) + " '" + str(op2) + "'")
 
     if operator == "BOTH SAEM":
-        if op1 == op2:
-            return True
-        else:
-            return False
+        return op1 == op2
     elif operator == "DIFFRINT":
-        if op1 != op2:
-            return True
-        else:
-            return False
+        return op1 != op2
 
 #evaluate an expression node from the syntax tree, returns the python value
 def evalExpression(node):
@@ -643,17 +621,11 @@ def isCaseMatch(it_value, case_value):
     case_type = getDataType(case_value)
 
     if (it_type == "NUMBR" or it_type == "NUMBAR") and (case_type == "NUMBR" or case_type == "NUMBAR"):
-        if it_value == case_value:
-            return True
-        else:
-            return False
+        return it_value == case_value
     elif it_type != case_type: #iba yung type, hindi match
         return False
     else:
-        if it_value == case_value:
-            return True
-        else:
-            return False
+        return it_value == case_value
 
 #WTF? compares IT to each OMG case
 def switch(node):
