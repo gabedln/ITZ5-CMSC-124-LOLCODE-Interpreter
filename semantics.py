@@ -398,25 +398,20 @@ def evalComparison(operator, op1, op2):
 
     #check if both are numeric
     if (getDataType(op1) == "NUMBR" or getDataType(op1) == "NUMBAR") and (getDataType(op2) == "NUMBR" or getDataType(op2) == "NUMBAR"):
-        if op1 == op2:
-            equal = True
-        else:
-            equal = False
-    elif getDataType(op1) != getDataType(op2): # hindi equal instead of error
-        equal = False
-    else:
-        if op1 == op2:
-            equal = True
-        else:
-            equal = False
+        pass
+    elif getDataType(op1) != getDataType(op2): # no automatic typecasting
+        error("no automatic typecasting for " + getDataType(op1) + " '" + str(op1) + "' and " + getDataType(op2) + " '" + str(op2) + "'")
 
     if operator == "BOTH SAEM":
-        return equal
-    else: # DIFFRINT
-        if equal == True:
-            return False
-        else:
+        if op1 == op2:
             return True
+        else:
+            return False
+    elif operator == "DIFFRINT":
+        if op1 != op2:
+            return True
+        else:
+            return False
 
 #evaluate an expression node from the syntax tree, returns the python value
 def evalExpression(node):
@@ -650,6 +645,23 @@ def conditional(node):
         return None
 
 #check kung equal si IT at yung OMG case, no typecasting pero 1 and 1.0 should be equal
+def isCaseMatch(it_value, case_value):
+    it_type = getDataType(it_value)
+    case_type = getDataType(case_value)
+
+    if (it_type == "NUMBR" or it_type == "NUMBAR") and (case_type == "NUMBR" or case_type == "NUMBAR"):
+        if it_value == case_value:
+            return True
+        else:
+            return False
+    elif it_type != case_type: #iba yung type, hindi match
+        return False
+    else:
+        if it_value == case_value:
+            return True
+        else:
+            return False
+
 #WTF? compares IT to each OMG case
 def switch(node):
     cases = node[1]
@@ -660,7 +672,7 @@ def switch(node):
     matched = -1
     for k in range(len(cases)):
         case_value = evalExpression(cases[k][0])
-        if evalComparison("BOTH SAEM", it_value, case_value) == True:
+        if isCaseMatch(it_value, case_value) == True:
             matched = k
             break
 
