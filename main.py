@@ -125,6 +125,21 @@ def main():
         background="#333337",
         foreground="#E5E7EB" ,
     )
+    style.configure(
+        "Blue.TButton", # cross-platform blue button style (works on both macOS and Windows with clam theme)
+        font=("Arial", 9, "bold"),
+        background="#2563EB",
+        foreground="#FFFFFF",
+        borderwidth=0,
+        focusthickness=0,
+        focuscolor="#2563EB",
+        relief="flat",
+    )
+    style.map(
+        "Blue.TButton",
+        background=[("pressed", "#1E40AF"), ("active", "#1D4ED8")],
+        foreground=[("pressed", "#FFFFFF"), ("active", "#FFFFFF")],
+    )
 
     # ---------------- file explorer bar ----------------
     top_frame = tk.Frame(window, bg="#1E1E1E")
@@ -148,16 +163,12 @@ def main():
             editor.insert("1.0", file_content) # inserts the content of the file into the editor
             updateLineNumbers(editor, line_numbers) # refresh line numbers after loading file
 
-    open_btn = tk.Button( # creates new button for open file
+    open_btn = ttk.Button( # creates new button for open file
         top_frame,
         text="Open File",
-        font=("Arial", 9, "bold"),
-        bg="#2563EB",
-        fg="#FFFFFF" ,
-        activebackground="#1D4ED8",
-        activeforeground="#FFFFFF" ,
-        padx=12,
-        pady=4,
+        style="Blue.TButton",
+        padding=(12, 4),
+        cursor="hand2",
         command=openFile
     )
     open_btn.pack(side="left", padx=(0, 10)) # places the button on the left side of the top frame with some padding to the right
@@ -360,17 +371,11 @@ def main():
             writeConsole(error_message + "\n", "error")
 
     # place Execute button on the bottom-left under the Code Editor (compact width, not full width)
-    execute_btn = tk.Button(
+    execute_btn = ttk.Button(
         btn_frame,
         text="EXECUTE",
-        font=("Arial", 9, "bold"),
-        bg="#2563EB",
-        fg="#FFFFFF" ,
-        activebackground="#1D4ED8",
-        activeforeground="#FFFFFF" ,
-        relief="flat",
-        padx=20,
-        pady=5,
+        style="Blue.TButton",
+        padding=(20, 5),
         cursor="hand2",
         command=execute
     )
