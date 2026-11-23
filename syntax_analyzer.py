@@ -720,7 +720,7 @@ def parseProgram(lexical_table):
 
 def checkSyntax(code): # function that returns True if syntax is valid; else returns False
     lexical_table = getLexemes(code) # we use lexical analysis from previous milestone (use getLexemes function)
-    tree, message = parseProgram(lexical_table)
+    tree, _ = parseProgram(lexical_table)
 
     return (tree is not None) # if tree is not None, then return True; else False
 # -------------------------------------------------------------------------------------------------------------------------------------
