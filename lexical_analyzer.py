@@ -4,32 +4,18 @@
 # https://regex101.com/
 # Project Requirement # 1 - Lexemes
 
-# Assumptions and Formatting Rules: (don't delete)
-# 1) LOLCODE source files should have .lol extension
-# 2) Should start with HAI and end in KTHXBYE, no need for version number
-# 3) You may assume ONE LINE CONTAINS ONE STATEMENT ONLY
-# 4) There is no need to support SOFT COMMAND BREAKS, EACH STATEMENT IS DELIMITED BY NEW LINE
-# 5) Assume that there is only one whitespace in between keywords
-# 6) Indentation is IRRELEVANT
-# 7) Spaces inside YARN (string) should be RETAINED
-# 8) Comments are NOT CONSIDERED STATEMENTS and MUST BE IGNORED!!
-# 9) Keywords OBTW and TLDR MUST HAVE THEIR OWN LINES (bawal ung OBTW <comment> TLDR)
-# 10) Variables are declared in WAZZUP BUHBYE ( so dapat after HAI, WAZZUP BUHBYE agad OR NONE AT ALL)
-# 11) All variables must be declared inside the WAZZUP portion of the program. The WAZZUP clause is found at the beginning of the program, after HAI.
-# 12) Operations are in PREFIX NOTATION (Important)
-
-# NOTE: lexemes lang ang chinecheck dito (valid tokens, strings, comments)
-# yung pagkakasunod-sunod ng statements (HAI...KTHXBYE, WAZZUP, functions, etc.) ay chinecheck na ng syntax_analyzer.py
-
 import re  # import regex
 
-lexical_error = ""      # added: error message na ipapakita sa UI kapag may lexical error
+# GLOBAL VARIABLES: lexical error and row line numbers
+lexical_error = ""  # init for lexical error; string that shows error message
 row_line_numbers = []   # added: line number ng bawat row ng lexical table (para sa error messages ng syntax analyzer)
 
-# ------------------------------------------------------------------------------------------------------------
-# FUNCTION FOR DEALING WITH COMMENTS:
-# comments are not considered statements and must be ignored; we will STRIP COMMENTS AWAY before passing to getLexemes() function
-# returns a list of [line number, clean line] or None kapag may error
+# ====================================================================================================================================
+# FUNCTION FOR DEALING WITH COMMENTS:                                                                                                |
+# comments are not considered statements and must be ignored; we will STRIP COMMENTS AWAY before passing to getLexemes() function    |
+# returns a list of [line number, clean line] or None kapag may error                                                                |
+# ====================================================================================================================================
+
 def stripComments(code):
     global lexical_error
     clean_lines = [] # init empty list for clean lines
@@ -47,10 +33,12 @@ def stripComments(code):
                 return None
             obtw_tldr = True
             continue
+
         elif re.match(r'^TLDR(?:\s|$)', stripped_line): # if TLDR, we end the flag and continue
             if obtw_tldr == False: # if obtw_tldr is false when we encounter TLDR, it means there is no OBTW before TLDR
                 lexical_error = "Line " + str(line_number) + ": TLDR without a matching OBTW"
                 return None
+            
             after_tldr = stripped_line[4:].strip() # check if there is anything after TLDR
             if after_tldr and not re.match(r'^BTW(?:\s|$)', after_tldr): # if there is something after TLDR and it's not a BTW comment, return None (error)
                 lexical_error = "Line " + str(line_number) + ": TLDR must be on its own line"
@@ -64,7 +52,7 @@ def stripComments(code):
         # we use match iter because we find all instances of BTW
         for match in re.finditer(r'\bBTW\b', stripped_line):
             before = stripped_line[:match.start()] # find everything before btw
-            # e.g. I HAS A VAR ITZ 5BTW this is a comment
+            # e.g. I HAS A VAR ITZ 5 BTW this is a comment
             # before = I HAS A VAR ITZ 5 (we remove btw and the rest)
             # if there are even numbers of quotes before (meaning closed quotes), then everything after BTW is a comment
             # if there are odd numbers of quotes before (only 1 quotation) there are two instances:
@@ -85,47 +73,29 @@ def stripComments(code):
             clean_lines.append([line_number, stripped_line]) # add the cleaned line to the list (kasama na yung line number)
 
     if obtw_tldr == True: # kapag TRUE parin siya even after, ibig sabihin hindi na close so error
-        lexical_error = "Unclosed comment block (OBTW without TLDR)"
+        lexical_error = "Line " + str(line_number) + ": Unclosed comment block (OBTW without TLDR)"
         return None
 
     return clean_lines # added: list na yung binabalik para kasama yung line numbers
 # ------------------------------------------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------------------------------------------
-# for bonus! to be double checked pa
-# LINE CONTINUATION (...) at SOFT COMMAND BREAKS (,)
-# - kapag nagtapos yung line sa "..." idudugtong natin yung susunod na line
-# - kapag may comma na nasa labas ng string, hahatiin natin sa dalawang statements
-def splitStatements(clean_lines):
-    # 1) line continuation
-    joined_lines = []
-    current_line = ""
-    start_line_number = 0
-    for item in clean_lines:
-        line_number = item[0]
-        line = item[1]
-        if current_line == "": # bagong statement, tandaan natin kung saang line nagsimula
-            start_line_number = line_number
-        if line.endswith("..."): # may continuation, idudugtong sa susunod na line
-            current_line = current_line + line[:-3] + " "
-        else:
-            current_line = current_line + line
-            joined_lines.append([start_line_number, current_line])
-            current_line = ""
-    if current_line.strip() != "": # may "..." sa pinakahuling line, isama na lang
-        joined_lines.append([start_line_number, current_line])
+# ====================================================================================================================================
+# HELPER FUNCTION FOR SOFT BREAK COMMANDS:                                                                                           |
+# soft break commands are commas (,) that separate statements within the same line                                                   |
+# returns a list of [line number, clean line] or None kapag may error                                                                |
+# ====================================================================================================================================
+# format of clean_lines: [[line_number, clean_line], [line_number, clean_line], ...]
 
-    # 2) soft command breaks
+def splitStatements(clean_lines): # input in splitStatements is the output of stripComments() function
     statements = []
-    for item in joined_lines:
+    for item in clean_lines:
         line_number = item[0]
         line = item[1]
         in_string = False # flag kung nasa loob tayo ng "..."
         piece = ""
         for char in line:
             if char == '"':
-                if in_string == True:
-                    in_string = False
+                if in_string == True: in_string = False
                 else:
                     in_string = True
             if char == ',' and in_string == False: # comma sa labas ng string = bagong statement
@@ -140,16 +110,18 @@ def splitStatements(clean_lines):
     return statements
 # ------------------------------------------------------------------------------------------------------------
 
-# ------------- FUNCTION FOR GETTING LEXEMES -----------------------------------------------------------------
+# ====================================================================================================================================
+# ACTUAL CODE TO GET LEXEMES:                                                                                                        |
+# ====================================================================================================================================
 def getLexemes(code): # function for getting lexemes
     global lexical_error, row_line_numbers
     lexical_error = ""
     row_line_numbers = []
     lexical_table = [] # init for lexical table (one token list per source line)
-
+    type_literals = ["WIN", "FAIL", "TROOF", "NOOB", "NUMBR", "NUMBAR", "YARN"] # added: list of type literals
     pl_element = [ # PL elements, regex, and classification
             #  ---------------- code delimiters ------------------------------
-            ['HAI', "Code Delimiter"], # format is [TABLENAME, REGEX, CLASSIFICATION]
+            ['HAI', "Code Delimiter"], # format is [TABLENAME, CLASSIFICATION]
             ['KTHXBYE', "Code Delimiter"],
 
             #------------------- variable declarations -----------------------
@@ -194,8 +166,6 @@ def getLexemes(code): # function for getting lexemes
 
             # ------------------ input and output (print() and input()) ----------
             ['VISIBLE','Output Keyword'],
-            ['+', 'Concatenation Delimiter'],
-            ['!', 'Newline Suppressor'], # for bonus! to be double checked pa (VISIBLE ... ! = walang newline)
             ['GIMMEH', 'Input Keyword'],
 
             # ------------------ flow-control statements -----------------
@@ -262,10 +232,14 @@ def getLexemes(code): # function for getting lexemes
                     lexical_error = "Line " + str(line_number) + ": unterminated string literal"
                     return None # unterminated string error
                 matched = True
+            elif whole_string.startswith("+"): # For YARN literals, if starts with + (concatenation)
+                line_tokens.append(["+", "Concatenation Operator"]) # add the + operator to lexical table;
+                whole_string = whole_string[1:].strip() # removes
+                matched = True
 
             if not matched: # if after going through yarn literal still not match, we check each item in pl_element
                 for j in pl_element:
-                    if re.match(re.escape(j[0]) + r'(?=\s|$)', whole_string): # regex match; keyword must end with whitespace or end of line
+                    if re.match(re.escape(j[0]) + r'(?=\s|\+|$)', whole_string): # regex match; keyword must end with whitespace or end of line
                         if j[0] in ['BTW', 'OBTW', 'TLDR']: # if the PL matched is a comment, we ignore it and continue
                             # at this point comments should have been stripped already, so if we encounter a comment here, it means there is an error in the code
                             lexical_error = "Line " + str(line_number) + ": " + j[0] + " must be on its own line"
@@ -283,6 +257,10 @@ def getLexemes(code): # function for getting lexemes
                                         if var_name == k[0]:
                                             lexical_error = "Line " + str(line_number) + ": keyword " + var_name + " cannot be a variable name"
                                             return None # if it is a keyword, return None (error)
+                                    for k in type_literals: # we check if the var_name is not a type literal
+                                        if var_name == k:
+                                            lexical_error = "Line " + str(line_number) + ": type literal " + var_name + " cannot be a variable name"
+                                            return None # if it is a type literal, return None (error)
                                     line_tokens.append([var_name, "Variable Identifier"]) # then we add that to lexical table
                                     whole_string = whole_string[len(var_name):].strip()
                                 else:
@@ -297,11 +275,10 @@ def getLexemes(code): # function for getting lexemes
                 token = parts[0]
                 remaining  = parts[1].strip() if len(parts) > 1 else ""
 
-                # for bonus! to be double checked pa
-                # kapag nakadikit yung ! sa dulo ng word, ihiwalay natin
-                if len(token) > 1 and token.endswith("!"):
-                    remaining = "! " + remaining
-                    token = token[:-1]
+                if "+" in token:
+                    plus_pos = token.find("+")
+                    remaining = whole_string[plus_pos:].strip()
+                    token = token[:plus_pos]
 
                 if re.match(r'^-?[0-9]+$', token):           # number literal
                     line_tokens.append([token, "NUMBR Literal"])
@@ -325,12 +302,17 @@ def getLexemes(code): # function for getting lexemes
 
         lexical_table.append(line_tokens)
         row_line_numbers.append(line_number) # added: tandaan yung line number ng row na to
-
-    # ----- printing the lexical table --------------
-    # print("\n-----------Lexical Table----------")
-    # for line in lexical_table:
-    #     for token in line:
-    #         print(f"{token[0]:<10} | {token[1]}")
-    # print("----------------------------------")
-
+    #printLexicalTable(lexical_table) # helper function to print the lexical table in a readable format
     return lexical_table
+
+
+def printLexicalTable(lexical_table): # helper function to print the lexical table in a readable format
+    # ONLY FOR DBEUGGING IN TERMINAL; NOT USED IN GUI
+    if lexical_table is None:
+        print("No lexical table to print.")
+        return
+    print("\n-----------Lexical Table----------")
+    for line in lexical_table:
+        for token in line:
+            print(f"{token[0]:<10} | {token[1]}")
+    print("----------------------------------")
