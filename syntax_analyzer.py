@@ -4,58 +4,14 @@
 # https://regex101.com/
 # Project Requirement # 2 - Syntax Analyzer
 
-# Assumptions and Formatting Rules: (don't delete)
-# 1) LOLCODE source files should have .lol extension
-# 2) Should start with HAI and end in KTHXBYE, no need for version number
-# 3) You may assume ONE LINE CONTAINS ONE STATEMENT ONLY
-# 4) There is no need to support SOFT COMMAND BREAKS, EACH STATEMENT IS DELIMITED BY NEW LINE
-# 5) Assume that there is only one whitespace in between keywords
-# 6) Indentation is IRRELEVANT
-# 7) Spaces inside YARN (string) should be RETAINED
-# 8) Comments are NOT CONSIDERED STATEMENTS and MUST BE IGNORED!!
-# 9) Keywords OBTW and TLDR MUST HAVE THEIR OWN LINES (bawal ung OBTW <comment> TLDR)
-# 10) Variables are declared in WAZZUP BUHBYE ( so dapat after HAI, WAZZUP BUHBYE agad OR NONE AT ALL)
-# 11) All variables must be declared inside the WAZZUP portion of the program. The WAZZUP clause is found at the beginning of the program, after HAI.
-# 12) Operations are in PREFIX NOTATION (Important)
-
-# HOW IT WORKS:
-# - kinukuha natin yung lexical table (one row of tokens per line) galing sa lexical_analyzer.py
-# - chinecheck natin kung tama yung grammar ng bawat statement
-# - habang nagchecheck, ginagawa na rin natin yung SIMPLIFIED SYNTAX TREE na ipapasa sa semantics.py
-#   para hindi na kailangan i-check ulit ng semantics yung syntax (ie-execute na lang niya)
-# - kapag may error, ilalagay natin yung message sa syntax_error tapos -1 (or None) yung ibabalik
-#
-# FORMAT NG SYNTAX TREE:
-#   expressions:
-#     ["LITERAL", value]
-#     ["VAR", name]
-#     [operator, left, right]
-#     ["NOT", operand]
-#     ["ALL OF" / "ANY OF" / "SMOOSH", [operands]]
-#     ["MAEK", expression, type]
-#     ["I IZ", function_name, [arguments]]
-#   statements:
-#     ["DECLARE", name, expression or None]
-#     ["VISIBLE", [expressions], add_newline]
-#     ["GIMMEH", name]
-#     ["ASSIGN", name, expression]
-#     ["RECAST", name, type]              (IS NOW A)
-#     ["EXPRESSION", expression]          (result goes to IT)
-#     ["IF", if_block, [[mebbe_expression, mebbe_block], ...], else_block or None]
-#     ["SWITCH", [[case_literal, case_block], ...], default_block or None]
-#     ["LOOP", label, "UPPIN"/"NERFIN", variable, "TIL"/"WILE"/None, condition or None, loop_block]
-#     ["GTFO"]
-#     ["FOUND YR", expression]
-#   program:
-#     {"declarations": [...], "body": [...], "functions": {name: [parameters, function_block]}}
-
-import lexical_analyzer # para makuha yung line numbers at error message ng lexical analyzer
-from lexical_analyzer import getLexemes # we reuse the lexical analyzer
+import lexical_analyzer  # para makuha yung line numbers at error message ng lexical analyzer
+from lexical_analyzer import getLexemes  # we reuse the lexical analyzer
 
 # -------- separate natin ung mga operations na may two arity and infinite arity --------
 # ang logic dito is: kailangang mag match para alam kung ilang parameters ittake
 two_arity = ["SUM OF", "DIFF OF", "PRODUKT OF", "QUOSHUNT OF", "MOD OF",
 "BOTH OF", "EITHER OF", "WON OF", "BOTH SAEM", "DIFFRINT", "BIGGR OF", "SMALLR OF"]
+
 infinite_arity = ["ANY OF", "ALL OF"]
 # ------------------------------------------------------------------------------------------
 
@@ -65,28 +21,29 @@ TYPES = ["NOOB", "TROOF", "NUMBR", "NUMBAR", "YARN"]
 block_keywords = ["YA RLY", "MEBBE", "NO WAI", "OIC", "OMG", "OMGWTF", "IM OUTTA YR",
                   "IF U SAY SO", "WAZZUP", "BUHBYE", "HAI", "KTHXBYE"]
 
-syntax_error = ""      # error message na ipapakita sa UI
-function_arity = {}    # bilang ng parameters (para ma-check yung function calls)
-functions = {}         # [parameters, function_block]
-current_row = 0        # index ng row na chinecheck natin (para sa line number ng error)
+syntax_error = "" # error message na ipapakita sa UI
+function_arity = {} # bilang ng parameters (para ma-check yung function calls)
+functions = {} # [parameters, function_block]
+current_row = 0 # index ng row na chinecheck natin (para sa line number ng error)
 
 
 # save the error message with the line number (first error lang yung tinatandaan)
-def error(message):
-    global syntax_error
-    if syntax_error != "":
+def error(message): # function to save error messages for GUI
+    global syntax_error # we set global syntax_error (similar to lexical_error)
+    if syntax_error != "": # if no syntax error, then we just return (do nothing)
         return
-    line = ""
-    if current_row < len(lexical_analyzer.row_line_numbers):
+    line = "" # initialize line number string
+    if current_row < len(lexical_analyzer.row_line_numbers): # if current_row is valid, then we get line number from lexical_analyzer.row_line_numbers
         line = "Line " + str(lexical_analyzer.row_line_numbers[current_row]) + ": "
-    syntax_error = line + message
+    syntax_error = line + message # set syntax_error to line number + message
 
 
 # returns the first lexeme of row i (or None kapag wala na tayong rows)
-def firstWord(rows, i):
-    if i < len(rows):
-        if len(rows[i]) > 0:
-            return rows[i][0][0]
+def firstWord(rows, i): # gets rows from lexical table, i = index
+    if i < len(rows): # if i is less than the length of rows,
+        if len(rows[i]) > 0: # if len(rows[i]) > 0 (meaning there is a lexeme in that row), then we return the first lexeme of that row
+            return rows[i][0][0] # return the first lexeme of that row (lexeme is at index 0 of the tuple, and the tuple is at index 0 of the list)
+            # ROW 1, LEXEME 1, First value which is lexeme 
         else:
             return None
     else:
@@ -264,10 +221,10 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
             error("Function call is missing MKAY")
             return None, -1
         # check kung tama yung bilang ng arguments (kapag defined yung function)
-        if name in function_arity:
-            if function_arity[name] != len(arguments):
-                error("Function " + name + " expects " + str(function_arity[name]) + " argument(s), got " + str(len(arguments)))
-                return None, -1
+
+        if name in function_arity and function_arity[name] != len(arguments):
+            error("Function " + name + " expects " + str(function_arity[name]) + " argument(s), got " + str(len(arguments)))
+            return None, -1
         return ["I IZ", name, arguments], i + 1
 
     error("Expected an expression, found " + lexeme)
@@ -675,21 +632,24 @@ def parseBlock(rows, i, stop_words, inside):
 # ------------------------ code for checking syntax ---------------------------------------------------------------------------------
 #returns [syntax tree, message], syntax tree is None kapag may error
 def parseProgram(lexical_table):
-    global syntax_error, function_arity, functions, current_row
-    syntax_error = ""
-    function_arity = {}
-    functions = {}
-    current_row = 0
+    global syntax_error, function_arity, functions, current_row # gets the global variables
+    syntax_error = "" # reset syntax_error for each new program
+    function_arity = {} # reset function_arity for each new program
+    functions = {} # reset functions for each new program
+    current_row = 0 # reset current_row for each new program
 
     if lexical_table is None: # error from lexical analyzer
         syntax_error = "Lexical analysis failed"
         return None, syntax_error
 
-    rows = lexical_table
+    rows = lexical_table # gets the rows from lexical table
+    # LEXICAL TABLE RETURN FORMAT:
+    #[["lexeme", "classification"], ["lexeme", "classification"], ...] for each row
+    # index in lexical table + 1 = line number in original code
 
     #kunin muna lahat ng function names at bilang ng parameters
     # para ma-check yung function calls kahit nauna yung call bago yung definition
-    for index in range(len(rows)):
+    for index in range(len(rows)): 
         if firstWord(rows, index) == "HOW IZ I":
             current_row = index
             name, parameters = parseFunctionHeader(rows[index])
@@ -755,14 +715,12 @@ def parseProgram(lexical_table):
         return None, syntax_error
 
     tree = {"declarations": declarations, "body": body, "functions": functions}
-    return tree, "Syntax is valid"
+    return tree
 
 
 def checkSyntax(code): # function that returns True if syntax is valid; else returns False
     lexical_table = getLexemes(code) # we use lexical analysis from previous milestone (use getLexemes function)
-    tree, message = parseProgram(lexical_table)
-    if tree is None:
-        return False
-    else:
-        return True
+    tree = parseProgram(lexical_table)
+
+    return (tree is not None) # if tree is not None, then return True; else False
 # -------------------------------------------------------------------------------------------------------------------------------------
