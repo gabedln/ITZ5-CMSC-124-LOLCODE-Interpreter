@@ -119,7 +119,17 @@ def typecast(val, new_data_type, explicit=False):
             return int(val)
         #if yarn, convert the value to string of characters
         if new_data_type == "YARN":
-            return str(Decimal(str(val)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)) # truncate to 2 decimal places
+            #truncate maximum 2 decimal places
+            result = Decimal(str(val)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+
+            #tanggalin yung unnecessary trailing zeros
+            text = format(result, "f").rstrip("0").rstrip(".")
+
+            #para hindi maging empty string or negative zero
+            if text == "" or text == "-" or text == "-0":
+                text = "0"
+
+            return text
         #consider troof also, kapag 0 false, other value true
         if new_data_type == "TROOF":
             return val != 0
