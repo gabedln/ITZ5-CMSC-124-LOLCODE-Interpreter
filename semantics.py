@@ -418,8 +418,11 @@ def visible(node):
 
     for expression in node[1]:
         value = evalExpression(expression)
-        #implicit typecast sa YARN
-        text = typecast(value, "YARN")
+        if value is None: #NOOB value, print NOOB instead of error
+            text = "NOOB"
+        else:
+            #implicit typecast sa YARN
+            text = typecast(value, "YARN")
         output = output + text
 
     if node[2] == True: #automatically adds newline
