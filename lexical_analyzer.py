@@ -28,26 +28,28 @@ def stripComments(code):
         stripped_line = line.strip() # strip the line to remove leading/trailing whitespace
 
         if re.match(r'^OBTW(?:\s|$)', stripped_line): # if OBTW, we set the flag to TRUE and continue
+            if obtw_tldr: # nested OBTW inside an already-open OBTW block is not allowed
+                lexical_error = "Line " + str(line_number) + ": Nested OBTW is not allowed"
+                return None
             if re.search(r'\bTLDR\b', stripped_line): # if TLDR and OBTW in same line, return None (error)
                 lexical_error = "Line " + str(line_number) + ": OBTW and TLDR must be on separate lines"
                 return None
             obtw_tldr = True
             continue
 
-        elif re.match(r'^TLDR(?:\s|$)', stripped_line): # if TLDR, we end the flag and continue
-            if obtw_tldr == False: # if obtw_tldr is false when we encounter TLDR, it means there is no OBTW before TLDR
-                lexical_error = "Line " + str(line_number) + ": TLDR without a matching OBTW"
-                return None
-            
-            after_tldr = stripped_line[4:].strip() # check if there is anything after TLDR
-            if after_tldr and not re.match(r'^BTW(?:\s|$)', after_tldr): # if there is something after TLDR and it's not a BTW comment, return None (error)
-                lexical_error = "Line " + str(line_number) + ": TLDR must be on its own line"
-                return None
-            obtw_tldr = False
-            continue
+        elif obtw_tldr: # while inside OBTW ... TLDR comment block
+            tldr_match = re.search(r'\bTLDR\b', stripped_line) # allow comment text before TLDR on closing line
+            if tldr_match:
+                after_tldr = stripped_line[tldr_match.end():].strip() # check if there is anything after TLDR
+                if after_tldr and not re.match(r'^BTW(?:\s|$)', after_tldr): # statements after TLDR are not allowed
+                    lexical_error = "Line " + str(line_number) + ": TLDR must be on its own line"
+                    return None
+                obtw_tldr = False
+            continue # ignore everything inside OBTW and TLDR
 
-        elif obtw_tldr: # while obtw_tldr == TRUE, we just continue
-            continue # wala tayong pake sa lines of code kapag naka enclose sa OBTW and TLDR
+        elif re.match(r'^TLDR(?:\s|$)', stripped_line): # TLDR encountered when obtw_tldr is False
+            lexical_error = "Line " + str(line_number) + ": TLDR without a matching OBTW"
+            return None
 
         # we use match iter because we find all instances of BTW
         for match in re.finditer(r'\bBTW\b', stripped_line):
@@ -95,9 +97,7 @@ def splitStatements(clean_lines): # input in splitStatements is the output of st
         piece = ""
         for char in line:
             if char == '"':
-                if in_string == True: in_string = False
-                else:
-                    in_string = True
+                in_string = not in_string
             if char == ',' and in_string == False: # comma sa labas ng string = bagong statement
                 if piece.strip() != "":
                     statements.append([line_number, piece.strip()])
