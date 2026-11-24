@@ -383,11 +383,14 @@ def callFunction(name, argument_nodes):
     #functions cannot access identifiers outside of it, so sariling symbol table
     saved_table = symbol_table
     symbol_table = [["IT", None, "NOOB"]]
-    for k in range(len(parameters)):
-        storeVal(parameters[k], arguments[k]) #pass by value
+    result = None
 
-    result = exec_cond_block(function_block)
-    symbol_table = saved_table #ibalik yung symbol table ng caller
+    try:
+        for k in range(len(parameters)):
+            storeVal(parameters[k], arguments[k]) #pass by value
+        result = exec_cond_block(function_block)
+    finally:
+        symbol_table = saved_table #ibalik yung symbol table ng caller
 
     #walang return or GTFO = NOOB
     if result is not None and result != "GTFO":
