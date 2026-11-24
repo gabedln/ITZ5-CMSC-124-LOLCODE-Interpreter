@@ -582,16 +582,27 @@ def loop(node):
     if findVar(var_name) == -1: #the variable should be an existing variable
         error("undeclared loop variable " + var_name)
 
+    MAX_LOOP_ITERATIONS = 500
+    iterations = 0
+
     while True:
         #TIL: repeat while FAIL, WILE: repeat while WIN
         if condition_type is not None:
             value = typecast(evalExpression(condition), "TROOF")
+
             if condition_type == "TIL" and value == True:
                 break
+
             if condition_type == "WILE" and value == False:
                 break
 
+        if iterations >= MAX_LOOP_ITERATIONS:
+            error("loop exceeded maximum iteration limit (500)")
+
+        iterations += 1
+
         result = exec_cond_block(loop_block)
+
         if result == "GTFO": #GTFO = break
             break
         elif result is not None: #FOUND YR sa loob ng loop, ipasa pataas sa function
@@ -599,6 +610,7 @@ def loop(node):
 
         #UPPIN = +1, NERFIN = -1 (same rules as SUM OF / DIFF OF, kaya kailangan castable sa number)
         current_value = getVal(var_name)
+
         if operation == "UPPIN":
             storeVal(var_name, evalArithmetic("SUM OF", current_value, 1))
         else:
