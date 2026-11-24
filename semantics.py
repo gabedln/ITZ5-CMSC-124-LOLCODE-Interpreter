@@ -407,6 +407,7 @@ def callFunction(name, argument_nodes):
 #STATEMENTS
 #returns None kapag normal, "GTFO" kapag nag-break, ["FOUND YR", value] kapag nag-return
 #I HAS <var> ITZ <val>
+#node = ["DECLARE", "name", expr_node or None]
 def declaration(node):
     var_name = node[1]
 
@@ -421,6 +422,8 @@ def declaration(node):
 
     storeVal(var_name, value)
 
+#<var> R <expr>
+#node = ["ASSIGN", "name", expr_node]
 def assignment(node):
     var_name = node[1]
 
@@ -432,6 +435,7 @@ def assignment(node):
     storeVal(var_name, value)
 
 #var IS NOW A type, change type mostly typecasting ulit
+#node = ["RECAST", "name", "TYPE"]
 def recast(node):
     var_name = node[1]
     var_index = findVar(var_name)
@@ -443,6 +447,7 @@ def recast(node):
     result = typecast(symbol_table[var_index][1], new_type, True)
     storeVal(var_name, result)
 
+#node = ["VISIBLE", [expression_nodes], add_newline]
 def visible(node):
     output = ""
 
@@ -460,6 +465,7 @@ def visible(node):
         output_function(output)
 
 #GIMMEH var
+#node = ["GIMMEH", "name"]
 def gimmeh(node):
     #find if existing yung hinihingi
     var_name = node[1]
@@ -469,10 +475,12 @@ def gimmeh(node):
     storeVal(var_name, input_function(var_name)) #the input value is always a YARN
 
 #lagay result sa IT
+#node = ["EXPRESSION", expr_node]
 def exprStatement(node):
     value = evalExpression(node[1])
     storeVal("IT", value)
 
+#returns None to continue, GTFO to break, or ["FOUND YR", value]
 def statement(node):
     kind = node[0]
 
@@ -488,11 +496,13 @@ def statement(node):
         recast(node)
     elif kind == "EXPRESSION":
         exprStatement(node)
+
     elif kind == "IF":
         return conditional(node)
     elif kind == "SWITCH":
         return switch(node)
     elif kind == "LOOP":
+
         return loop(node)
     elif kind == "GTFO":
         return "GTFO"
@@ -509,29 +519,30 @@ def exec_cond_block(block):
             raise LOLStoppedError()
         result = statement(node)
         if result is not None:
-            return result #ipasa pataas yung GTFO / FOUND YR
+            return result #GTFO/FOUND YR, return result sa callFunc
     return None
 
 #note: YA RLY if, MEBBE else if, NO WAI else
+#node = ["IF", if_block, mebbe_list, else_block], mebbe_list = [[condition_node, block],]
 def conditional(node):
     if_block = node[1]
     mebbe_list = node[2]
-    else_block = node[3]
+    else_block = node[3] #non kapag walang NO WAI
 
     it_value = getVal("IT")
 
-    #if IT can be cast to WIN, the if-clause executes
+    #if IT can be cast to WIN, if block executes
     if typecast(it_value, "TROOF") == True:
         return exec_cond_block(if_block)
 
-    #for bonus! to be double checked pa (MEBBE/else-if)
+    #for bonus! (MEBBE-ELSE IF)
     for mebbe in mebbe_list:
         value = evalExpression(mebbe[0])
         storeVal("IT", value) #MEBBE expression result goes to IT din
         if typecast(value, "TROOF") == True:
             return exec_cond_block(mebbe[1])
 
-    #otherwise, the else-clause executes
+    #otherwise, the else block executes
     if else_block is not None:
         return exec_cond_block(else_block)
     else:
@@ -550,9 +561,10 @@ def isCaseMatch(it_value, case_value):
         return it_value == case_value
 
 #WTF? compares IT to each OMG case
+#node = ["SWITCH", cases, default_block], cases = [[literal_node, block],]
 def switch(node):
     cases = node[1]
-    default_block = node[2]
+    default_block = node[2] #none kapag walang OMGWTF
     it_value = getVal("IT")
 
     #hanapin yung unang case na equal kay IT
@@ -563,26 +575,27 @@ def switch(node):
             matched = k
             break
 
-    #execute from the matched case until GTFO or OIC (fall through sa mga susunod na case)
+    #execute from the matched case until GTFO or OIC
     blocks = []
     if matched != -1:
         for k in range(matched, len(cases)):
             blocks.append(cases[k][1])
-    if default_block is not None: #default case (or fall through papunta sa default)
+    if default_block is not None: #default case
         blocks.append(default_block)
 
     for block in blocks:
         result = exec_cond_block(block)
         if result == "GTFO": #GTFO = break, labas na sa switch
             return None
-        elif result is not None: #FOUND YR, ipasa pataas sa function
+        elif result is not None: #FOUND YR, return result
             return result
     return None
 
+#node = ["LOOP", label, operation, var_name, condition_type, condition, loop_block]
 def loop(node):
-    operation = node[2]
+    operation = node[2] #"UPPIN" or "NERFIN"
     var_name = node[3]
-    condition_type = node[4]
+    condition_type = node[4] #"TIL", "WILE", or None
     condition = node[5]
     loop_block = node[6]
 
@@ -610,10 +623,10 @@ def loop(node):
 
         if result == "GTFO": #GTFO = break
             break
-        elif result is not None: #FOUND YR sa loob ng loop, ipasa pataas sa function
+        elif result is not None: #FOUND YR sa loob ng loop, return result
             return result
 
-        #UPPIN = +1, NERFIN = -1 (same rules as SUM OF / DIFF OF, kaya kailangan castable sa number)
+        #UPPIN = +1, NERFIN = -1 (same rules as SUM OF/DIFF OF, kaya kailangan typecastable sa number)
         current_value = getVal(var_name)
 
         if operation == "UPPIN":
