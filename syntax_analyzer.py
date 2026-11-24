@@ -59,6 +59,16 @@ def setCurrentRow(rows, i):
         current_row = len(rows) - 1
 
 
+# checks that the row i only has the keyword in it (nothing else on the same line)
+# returns True if the keyword stands by itself, else saves an error and returns False
+def checkAlone(rows, i, keyword):
+    setCurrentRow(rows, i)
+    if len(rows[i]) != 1:
+        error(keyword + " must be alone on its line")
+        return False
+    return True
+
+
 # ------------------------ parsing for values (literals) ---------------------------------------------------------------------------------
 def parseValue(tokens, i): # returns [node, index of the next token], [None, i] kapag hindi value, [None, -1] kapag may error
     if i >= len(tokens): # if we go past and there is no value, then we just return None
@@ -144,6 +154,9 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
             if i == -1:
                 return None, -1
             operands.append(operand)
+        if len(operands) < 2: # ALL OF / ANY OF need at least 2 operands
+            error(lexeme + " requires at least 2 operands")
+            return None, -1
         if i >= len(tokens):
             error(lexeme + " is missing MKAY")
             return None, -1
@@ -170,6 +183,9 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
             if i == -1:
                 return None, -1
             operands.append(operand)
+        if len(operands) < 2: # SMOOSH needs at least 2 operands
+            error("SMOOSH requires at least 2 operands")
+            return None, -1
         return ["SMOOSH", operands], i
 
     # explicit typecasting: MAEK <x> [A] <type>
@@ -305,7 +321,6 @@ def parseOutput(tokens): # VISIBLE has infinite arity, meaning it can take n num
         return None
 
     expressions = []
-    add_newline = True
     i = 1 # move past VISIBLE
 
     expression, i = parseExpression(tokens, i) # first operand
@@ -314,13 +329,7 @@ def parseOutput(tokens): # VISIBLE has infinite arity, meaning it can take n num
     expressions.append(expression)
 
     while i < len(tokens): # infinite arity, keep taking operands until there are no more
-        if tokens[i][0] == "!": # for bonus! to be double checked pa (walang newline, dapat nasa dulo)
-            if i != len(tokens) - 1:
-                error("! must be at the end of VISIBLE")
-                return None
-            add_newline = False
-            i = i + 1
-        elif tokens[i][0] == "+": # each operand is separated by +
+        if tokens[i][0] == "+": # each operand is separated by +
             if i + 1 >= len(tokens):
                 error("Missing operand after + in VISIBLE")
                 return None
@@ -328,13 +337,11 @@ def parseOutput(tokens): # VISIBLE has infinite arity, meaning it can take n num
             if i == -1:
                 return None
             expressions.append(expression)
-        else: # operands na walang + (allowed din sa original LOLCODE)
-            expression, i = parseExpression(tokens, i)
-            if i == -1:
-                return None
-            expressions.append(expression)
+        else: # operands must be separated by +, so anything else here means a missing separator
+            error("Missing + separator between operands in VISIBLE")
+            return None
 
-    return ["VISIBLE", expressions, add_newline]
+    return ["VISIBLE", expressions, True]
 # --------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ------------------------ parsing for GIMMEH (user input) ---------------------------------------------------------------------------------
@@ -350,11 +357,15 @@ def parseInput(tokens): # GIMMEH must always use a variable
 
 # ------------------------ parsing for if-then (O RLY?) ---------------------------------------------------------------------------------
 def parseConditional(rows, i, inside):
+    if not checkAlone(rows, i, "O RLY?"):
+        return None, -1
     i = i + 1 # move past O RLY? (we may assume O RLY?, YA RLY, NO WAI, and OIC are alone in their respective lines)
 
     setCurrentRow(rows, i)
     if firstWord(rows, i) != "YA RLY":
         error("O RLY? must be followed by YA RLY")
+        return None, -1
+    if not checkAlone(rows, i, "YA RLY"):
         return None, -1
 
     # the if-clause starts at YA RLY and ends when MEBBE, NO WAI or OIC is encountered
@@ -380,6 +391,8 @@ def parseConditional(rows, i, inside):
     # the else-clause starts at NO WAI and ends when OIC is encountered
     else_block = None
     if firstWord(rows, i) == "NO WAI":
+        if not checkAlone(rows, i, "NO WAI"):
+            return None, -1
         else_block, i = parseBlock(rows, i + 1, ["OIC"], inside + ["if"])
         if i == -1:
             return None, -1
@@ -388,12 +401,16 @@ def parseConditional(rows, i, inside):
     if firstWord(rows, i) != "OIC":
         error("O RLY? is missing OIC")
         return None, -1
+    if not checkAlone(rows, i, "OIC"):
+        return None, -1
 
     return ["IF", if_block, mebbe_list, else_block], i + 1
 # --------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ------------------------ parsing for switch-case (WTF?) ---------------------------------------------------------------------------------
 def parseSwitch(rows, i, inside):
+    if not checkAlone(rows, i, "WTF?"):
+        return None, -1
     i = i + 1 # move past WTF?
 
     setCurrentRow(rows, i)
@@ -410,6 +427,9 @@ def parseSwitch(rows, i, inside):
         if literal is None:
             error("OMG must be followed by a literal value")
             return None, -1
+        if next_i != len(rows[i]): # there are still tokens left after the literal
+            error("OMG should only take one value literal")
+            return None, -1
         case_block, i = parseBlock(rows, i + 1, ["OMG", "OMGWTF", "OIC"], inside + ["switch"])
         if i == -1:
             return None, -1
@@ -418,6 +438,8 @@ def parseSwitch(rows, i, inside):
     # the default case is specified by OMGWTF
     default_block = None
     if firstWord(rows, i) == "OMGWTF":
+        if not checkAlone(rows, i, "OMGWTF"):
+            return None, -1
         default_block, i = parseBlock(rows, i + 1, ["OIC"], inside + ["switch"])
         if i == -1:
             return None, -1
@@ -425,6 +447,8 @@ def parseSwitch(rows, i, inside):
     setCurrentRow(rows, i)
     if firstWord(rows, i) != "OIC":
         error("WTF? is missing OIC")
+        return None, -1
+    if not checkAlone(rows, i, "OIC"):
         return None, -1
 
     return ["SWITCH", cases, default_block], i + 1
@@ -511,6 +535,9 @@ def parseFunctionHeader(row):
         if row[j + 1][1] != "Variable Identifier":
             error("Invalid function parameter list (expected YR <parameter>)")
             return None, None
+        if row[j + 1][0] in parameters: # same parameter name was already used
+            error("Duplicate function parameter " + row[j + 1][0])
+            return None, None
         parameters.append(row[j + 1][0])
         j = j + 2
         if j < len(row): # may kasunod pa na parameter, dapat AN YR
@@ -533,6 +560,9 @@ def parseFunction(rows, i):
     name, parameters = parseFunctionHeader(rows[i])
     if name is None:
         return -1
+    if name in functions: # a function with the same name was already defined
+        error("Duplicate function definition " + name)
+        return -1
 
     function_block, i = parseBlock(rows, i + 1, ["IF U SAY SO"], ["function"])
     if i == -1:
@@ -541,6 +571,8 @@ def parseFunction(rows, i):
     setCurrentRow(rows, i)
     if firstWord(rows, i) != "IF U SAY SO":
         error("Function " + name + " is missing IF U SAY SO")
+        return -1
+    if not checkAlone(rows, i, "IF U SAY SO"):
         return -1
 
     functions[name] = [parameters, function_block]
@@ -567,6 +599,9 @@ def parseStatement(rows, i, inside):
         return parseLoop(rows, i, inside)
 
     if word == "HOW IZ I":
+        if len(inside) > 0: # functions cannot be defined inside if / switch / loop / another function
+            error("Functions cannot be defined inside another block")
+            return None, -1
         next_i = parseFunction(rows, i)
         return None, next_i
 
@@ -575,6 +610,12 @@ def parseStatement(rows, i, inside):
         return None, -1
 
     if word == "GTFO":
+        if len(tokens) != 1: # GTFO takes no operands
+            error("GTFO must be alone on its line")
+            return None, -1
+        if "loop" not in inside and "switch" not in inside and "function" not in inside:
+            error("GTFO can only be used inside a loop, switch-case, or function")
+            return None, -1
         return ["GTFO"], i + 1
 
     if word in block_keywords: # MEBBE / NO WAI / OIC na walang O RLY?
@@ -586,6 +627,9 @@ def parseStatement(rows, i, inside):
     elif word == "GIMMEH":
         node = parseInput(tokens)
     elif word == "FOUND YR":
+        if "function" not in inside: # FOUND YR is only a return statement for functions
+            error("FOUND YR can only be used inside a function")
+            return None, -1
         if len(tokens) < 2:
             error("FOUND YR requires an expression")
             return None, -1
@@ -670,11 +714,15 @@ def parseProgram(lexical_table):
     if firstWord(rows, i) != "HAI":
         error("Program must start with HAI")
         return None, syntax_error
+    if not checkAlone(rows, i, "HAI"):
+        return None, syntax_error
     i = i + 1
 
     # since kailangan ng WAZZUP at BUHBYE for variable declaration; titignan if meron (if wala, okay lang, pero bawal na mag declare ng variables)
     declarations = []
     if firstWord(rows, i) == "WAZZUP":
+        if not checkAlone(rows, i, "WAZZUP"):
+            return None, syntax_error
         i = i + 1 # move past WAZZUP
         while firstWord(rows, i) != "BUHBYE": # while we haven't seen BUHBYE;
             setCurrentRow(rows, i)
@@ -689,6 +737,8 @@ def parseProgram(lexical_table):
                 return None, syntax_error
             declarations.append(declaration)
             i = i + 1
+        if not checkAlone(rows, i, "BUHBYE"):
+            return None, syntax_error
         i = i + 1 # move past the block
 
     # parse remaining statements until KTHXBYE
@@ -699,6 +749,8 @@ def parseProgram(lexical_table):
     setCurrentRow(rows, i)
     if firstWord(rows, i) != "KTHXBYE":
         error("Program must end with KTHXBYE")
+        return None, syntax_error
+    if not checkAlone(rows, i, "KTHXBYE"):
         return None, syntax_error
     i = i + 1
 
