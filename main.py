@@ -140,6 +140,21 @@ def main():
         background=[("pressed", "#1E40AF"), ("active", "#1D4ED8")],
         foreground=[("pressed", "#FFFFFF"), ("active", "#FFFFFF")],
     )
+    style.configure(
+        "Red.TButton", # style for the STOP / reset button
+        font=("Arial", 9, "bold"),
+        background="#DC2626",
+        foreground="#FFFFFF",
+        borderwidth=0,
+        focusthickness=0,
+        focuscolor="#DC2626",
+        relief="flat",
+    )
+    style.map(
+        "Red.TButton",
+        background=[("pressed", "#991B1B"), ("active", "#B91C1C")],
+        foreground=[("pressed", "#FFFFFF"), ("active", "#FFFFFF")],
+    )
 
     # ---------------- file explorer bar ----------------
     top_frame = tk.Frame(window, bg="#1E1E1E")
@@ -352,6 +367,21 @@ def main():
         writeConsole(value + "\n") # show user input in the console
         return value
 
+    def resetProgram(): # stops any running loop and resets tables, console, and runtime state
+        semantics.stop_requested = True
+        semantics.symbol_table = [["IT", None, "NOOB"]]
+        semantics.console_output = []
+        if window.winfo_exists(): # only clear widgets if the window has not been closed
+            token_list.delete(*token_list.get_children())
+            symbol_list.delete(*symbol_list.get_children())
+            console.config(state="normal")
+            console.delete("1.0", "end")
+            console.config(state="disabled")
+
+    def onClose(): # stop any running loop cleanly before closing the window
+        semantics.stop_requested = True
+        window.destroy()
+
     def execute():
         # clear previous console output before running
         console.config(state="normal")
@@ -359,10 +389,15 @@ def main():
         console.config(state="disabled")
 
         semantics.output_function = printToConsole # sets the output function in semantics.py to printToConsole, so that any VISIBLE statements will write to the console
-        semantics.input_function = askInput # sets input function to askInput 
+        semantics.input_function = askInput # sets input function to askInput
+        semantics.check_events = window.update # keeps GUI responsive during loops so STOP can be clicked
 
         source_code = editor.get("1.0", "end-1c")
         tokens, table, _, error_message = interpret(source_code)
+
+        if semantics.stop_requested: # if STOP was clicked mid-execution, leave program state reset
+            resetProgram()
+            return
 
         populateTables(token_list, symbol_list, tokens, table)
 
@@ -370,7 +405,10 @@ def main():
             # display lexical, syntax, or semantic errors in red
             writeConsole(error_message + "\n", "error")
 
-    # place Execute button on the bottom-left under the Code Editor (compact width, not full width)
+    # stop running loops cleanly if the user closes the window
+    window.protocol("WM_DELETE_WINDOW", onClose)
+
+    # place Execute and Stop buttons on the bottom-left under the Code Editor
     execute_btn = ttk.Button(
         btn_frame,
         text="EXECUTE",
@@ -380,6 +418,16 @@ def main():
         command=execute
     )
     execute_btn.pack(side="left")
+
+    stop_btn = ttk.Button(
+        btn_frame,
+        text="STOP",
+        style="Red.TButton",
+        padding=(20, 5),
+        cursor="hand2",
+        command=resetProgram
+    )
+    stop_btn.pack(side="left", padx=(8, 0))
     window.mainloop()
 # ------------------------------------------------------------------------------------------------------------
 
