@@ -14,15 +14,12 @@ functions = {} # function name -> [parameters, function_block] (galing sa syntax
 input_function = input   # GIMMEH, papalitan ng GUI ng dialog box
 output_function = None   # VISIBLE, kapag may value, tatawagin agad para makita agad sa GUI console
 
-
 # simple exception para pag may semantic/runtime error, titigil agad yung program
 class LOLSemanticError(Exception):
     pass
 
-
 def error(message):
     raise LOLSemanticError(message)
-
 
 #find variable by variable name
 def findVar(var_name):
@@ -80,7 +77,7 @@ def typecast(val, new_data_type, explicit=False):
 
     #NOOB TYPECASTING RULES
     if data_type == "NOOB":
-        if new_data_type == "TROOF": #allowed for implicit and explicit, stated in the specs
+        if new_data_type == "TROOF": #allowed for implicit and explicit
             return False
         if explicit:
             if new_data_type == "NUMBR":
@@ -121,7 +118,6 @@ def typecast(val, new_data_type, explicit=False):
         if new_data_type == "YARN":
             #truncate maximum 2 decimal places
             result = Decimal(str(val)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-
             #tanggalin yung unnecessary trailing zeros
             text = format(result, "f").rstrip("0").rstrip(".")
 
@@ -154,7 +150,7 @@ def typecast(val, new_data_type, explicit=False):
 
         if new_data_type == "NUMBR" or new_data_type == "NUMBAR":
             for char in val:
-                #can be successfully cast if it contains non-numerical, non-hyphen, non-period characs
+                #if the character is not a digit,-,., the YARN cannot be typecasted
                 if not char.isdigit() and char != "-" and char != ".":
                     error("cannot typecast YARN '" + val + "' to " + new_data_type)
 
@@ -166,17 +162,17 @@ def typecast(val, new_data_type, explicit=False):
 
     error("cannot typecast " + data_type + " to " + new_data_type)
 
-# for bonus! to be double checked pa
-# special characters inside YARN:  :) newline, :> tab, :o bell, :" quote, :: colon
+# :) newline, :> tab, :o bell, :" quote, :: colon
+# convert special characters into string needed
 def convertSpecialCharacters(text):
-    result = ""
-    i = 0
+    result = "" #converted string
+    i = 0 #current character index
     while i < len(text):
-        if text[i] == ":" and i + 1 < len(text):
+        if text[i] == ":" and i + 1 < len(text): #all special characs starts with :, we check the character next to it after
             next_char = text[i + 1]
             if next_char == ")":
                 result = result + "\n"
-                i = i + 2
+                i = i + 2 #skip two characters since : and )
             elif next_char == ">":
                 result = result + "\t"
                 i = i + 2
@@ -189,10 +185,11 @@ def convertSpecialCharacters(text):
             elif next_char == ":":
                 result = result + ":"
                 i = i + 2
-            else: #hindi special character, isama lang yung :
+            else: #hindi special character
                 result = result + text[i]
                 i = i + 1
         else:
+            #normal lang or may : lang sa end ng string
             result = result + text[i]
             i = i + 1
     return result
@@ -207,7 +204,8 @@ def evalArithmetic(operator, op1, op2):
     op1_type = getDataType(op1)
     op2_type = getDataType(op2)
 
-    #TROOF is cast to NUMBR (WIN = 1, FAIL = 0)
+    #TROOF is cast to NUMBR 
+    # WIN is 1, FAIL is 0
     if op1_type not in ["NUMBR", "NUMBAR"]:
         if (op1_type == "YARN" and "." not in op1) or (op1_type == "TROOF"):
             op1 = typecast(op1, "NUMBR")
@@ -253,39 +251,38 @@ def evalArithmetic(operator, op1, op2):
         return min(op1, op2)
 
 def evalBoolean(operator, op1, op2):
-    # loop through x in op1 because 'all of' handles a list, then if there is one considered false
-    #in the operands, return false, else if all are true, return true
+    # loop through x in op1 kasi list na yung hinahandle natin
+    # pag nakakita ng isang false, return False na since all of
     if operator == "ALL OF":
         for x in op1:
             if typecast(x, "TROOF") == False:
                 return False
         return True
 
-    #same logic as all of, only find a one operand with true value and then return true immediately
+    #same logic as all of, pag nakakita ng isang True, return True na
     if operator == "ANY OF":
         for x in op1:
             if typecast(x, "TROOF") == True:
                 return True
         return False
 
-    #typecase troof into NOT so the op1 gets its bool value and then use pythons 'not' to negate
+    #typecase troof into NOT para makuha ng op1 yung bool value niya
+    #uses negation
     if operator == "NOT":
         op1 = typecast(op1, "TROOF")
         return op1 != True
 
-    #we typecast it both operands to troof for lolcode boolean
+    #we typecast it both operands to troof
     op1 = typecast(op1, "TROOF")
     op2 = typecast(op2, "TROOF")
 
-    #use pythons 'and' which is equivalent to both of of lolcode
+    #lolcode to python logic lang
     if operator == "BOTH OF":
         return op1 and op2
 
-    #use pythons 'or' which is equilvalent to either of of lolcode
     if operator == "EITHER OF":
         return op1 or op2
 
-    #use pythons 'not equal' to which is equivalent to won of in lol code
     if operator == "WON OF":
         return op1 != op2
 
@@ -298,7 +295,7 @@ def evalComparison(operator, op1, op2):
     #check if both are numeric
     if (getDataType(op1) == "NUMBR" or getDataType(op1) == "NUMBAR") and (getDataType(op2) == "NUMBR" or getDataType(op2) == "NUMBAR"):
         pass
-    elif getDataType(op1) != getDataType(op2): # no automatic typecasting
+    elif getDataType(op1) != getDataType(op2): #no automatic typecasting
         error("no automatic typecasting for " + getDataType(op1) + " '" + str(op1) + "' and " + getDataType(op2) + " '" + str(op2) + "'")
 
     if operator == "BOTH SAEM":
@@ -310,9 +307,9 @@ def evalComparison(operator, op1, op2):
 def evalExpression(node):
     kind = node[0]
 
-    #if literal, kunin yung value (nasa tree na yung python value)
+    #if literal, kunin yung value
     if kind == "LITERAL":
-        if getDataType(node[1]) == "YARN": #for bonus! YARN literal, convert special characters
+        if getDataType(node[1]) == "YARN": #for bonus! YARN literal, convert special characters!
             return convertSpecialCharacters(node[1])
         else:
             return node[1]
@@ -375,7 +372,7 @@ def callFunction(name, argument_nodes):
     parameters = functions[name][0]
     function_block = functions[name][1]
 
-    #the expressions must be executed first before executing the function body
+    #expressions must be executed first before executing the function body
     arguments = []
     for node in argument_nodes:
         arguments.append(evalExpression(node))
@@ -403,7 +400,6 @@ def callFunction(name, argument_nodes):
 
 #STATEMENTS
 #returns None kapag normal, "GTFO" kapag nag-break, ["FOUND YR", value] kapag nag-return
-
 #I HAS <var> ITZ <val>
 def declaration(node):
     var_name = node[1]
@@ -429,7 +425,7 @@ def assignment(node):
     value = evalExpression(node[2])
     storeVal(var_name, value)
 
-# var IS NOW A type, change type mostly typecasting ulit
+#var IS NOW A type, change type mostly typecasting ulit
 def recast(node):
     var_name = node[1]
     var_index = findVar(var_name)
@@ -450,7 +446,7 @@ def visible(node):
         text = typecast(value, "YARN")
         output = output + text
 
-    if node[2] == True: #automatically adds newline (unless may ! sa dulo) THIS ONES BUNOS TO BE CHECKED ALSo
+    if node[2] == True: #automatically adds newline
         output = output + "\n"
 
     console_output.append(output)
