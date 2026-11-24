@@ -13,9 +13,15 @@ functions = {} # function name -> [parameters, function_block] (galing sa syntax
 
 input_function = input   # GIMMEH, papalitan ng GUI ng dialog box
 output_function = None   # VISIBLE, kapag may value, tatawagin agad para makita agad sa GUI console
+stop_requested = False   # set to True when STOP button is pressed in the GUI
+check_events = None      # GUI callback (window.update) so clicking STOP works during loops
 
 # simple exception para pag may semantic/runtime error, titigil agad yung program
 class LOLSemanticError(Exception):
+    pass
+
+# exception para huminto agad yung program kapag pinindot yung STOP button (walang error message)
+class LOLStoppedError(Exception):
     pass
 
 def error(message):
@@ -116,14 +122,14 @@ def typecast(val, new_data_type, explicit=False):
             return int(val)
         #if yarn, convert the value to string of characters
         if new_data_type == "YARN":
-            #truncate maximum 2 decimal places
-            result = Decimal(str(val)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-            #tanggalin yung unnecessary trailing zeros
-            text = format(result, "f").rstrip("0").rstrip(".")
-
-            #para hindi maging empty string or negative zero
-            if text == "" or text == "-" or text == "-0":
-                text = "0"
+            # round(val, 10) removes binary float noise (e.g. 4 - 3.14 = 0.8599999999999999 -> 0.86) before truncating
+            result = Decimal(str(round(val, 10))).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+            # strip extra trailing zero, but keep ".0" so NUMBAR (e.g. 17.0) stays "17.0" per spec
+            text = format(result, "f").rstrip("0")
+            if text.endswith("."):
+                text = text + "0"
+            if text == "-0.0":
+                text = "0.0"
 
             return text
         #consider troof also, kapag 0 false, other value true
@@ -295,8 +301,8 @@ def evalComparison(operator, op1, op2):
     #check if both are numeric
     if (getDataType(op1) == "NUMBR" or getDataType(op1) == "NUMBAR") and (getDataType(op2) == "NUMBR" or getDataType(op2) == "NUMBAR"):
         pass
-    elif getDataType(op1) != getDataType(op2): #no automatic typecasting
-        error("no automatic typecasting for " + getDataType(op1) + " '" + str(op1) + "' and " + getDataType(op2) + " '" + str(op2) + "'")
+    elif getDataType(op1) != getDataType(op2): # no automatic typecasting: mismatched types are not equal (not an error)
+        return operator == "DIFFRINT" # returns FAIL (False) for BOTH SAEM, WIN (True) for DIFFRINT
 
     if operator == "BOTH SAEM":
         return op1 == op2
@@ -499,6 +505,8 @@ def statement(node):
 #execute statements one by one, titigil kapag may GTFO or FOUND YR
 def exec_cond_block(block):
     for node in block:
+        if stop_requested:
+            raise LOLStoppedError()
         result = statement(node)
         if result is not None:
             return result #ipasa pataas yung GTFO / FOUND YR
@@ -580,11 +588,14 @@ def loop(node):
 
     if findVar(var_name) == -1: #the variable should be an existing variable
         error("undeclared loop variable " + var_name)
-
-    MAX_LOOP_ITERATIONS = 500
-    iterations = 0
+    typecast(getVal(var_name), "NUMBAR") # spec: loop variable must be castable to a numerical value upfront
 
     while True:
+        if check_events is not None:
+            check_events() # keep GUI responsive so clicking STOP works even in infinite loops
+        if stop_requested:
+            raise LOLStoppedError()
+
         #TIL: repeat while FAIL, WILE: repeat while WIN
         if condition_type is not None:
             value = typecast(evalExpression(condition), "TROOF")
@@ -594,11 +605,6 @@ def loop(node):
 
             if condition_type == "WILE" and value == False:
                 break
-
-        if iterations >= MAX_LOOP_ITERATIONS:
-            error("loop exceeded maximum iteration limit (500)")
-
-        iterations += 1
 
         result = exec_cond_block(loop_block)
 
@@ -630,18 +636,21 @@ def displayValue(value):
 # returns [success, error message]
 # tree is the syntax tree galing sa syntax_analyzer.parseProgram()
 def runProgram(tree):
-    global symbol_table, console_output, functions
+    global symbol_table, console_output, functions, stop_requested
     # reset table
     #it's default is always none and noob
     symbol_table = [["IT", None, "NOOB"]]
     console_output = []
     functions = tree["functions"]
+    stop_requested = False
 
     try:
         #wazzup block
         exec_cond_block(tree["declarations"])
         #main program
         exec_cond_block(tree["body"])
+    except LOLStoppedError:
+        return True, ""
     except LOLSemanticError as e:
         return False, str(e)
 
