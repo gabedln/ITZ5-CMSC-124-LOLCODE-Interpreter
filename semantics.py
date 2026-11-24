@@ -168,38 +168,6 @@ def typecast(val, new_data_type, explicit=False):
 
     error("cannot typecast " + data_type + " to " + new_data_type)
 
-# :) newline, :> tab, :o bell, :" quote, :: colon
-# convert special characters into string needed
-def convertSpecialCharacters(text):
-    result = "" #converted string
-    i = 0 #current character index
-    while i < len(text):
-        if text[i] == ":" and i + 1 < len(text): #all special characs starts with :, we check the character next to it after
-            next_char = text[i + 1]
-            if next_char == ")":
-                result = result + "\n"
-                i = i + 2 #skip two characters since : and )
-            elif next_char == ">":
-                result = result + "\t"
-                i = i + 2
-            elif next_char == "o":
-                result = result + "\a"
-                i = i + 2
-            elif next_char == '"':
-                result = result + '"'
-                i = i + 2
-            elif next_char == ":":
-                result = result + ":"
-                i = i + 2
-            else: #hindi special character
-                result = result + text[i]
-                i = i + 1
-        else:
-            #normal lang or may : lang sa end ng string
-            result = result + text[i]
-            i = i + 1
-    return result
-
 #EXPRESSIONS
 ARITHMETIC = ["SUM OF", "DIFF OF", "PRODUKT OF", "QUOSHUNT OF", "MOD OF", "BIGGR OF", "SMALLR OF"]
 BOOLEAN = ["BOTH OF", "EITHER OF", "WON OF", "NOT", "ALL OF", "ANY OF"]
@@ -313,12 +281,9 @@ def evalComparison(operator, op1, op2):
 def evalExpression(node):
     kind = node[0]
 
-    #if literal, kunin yung value
+    #if literal, kunin yung value (strings inside "" are kept as-is)
     if kind == "LITERAL":
-        if getDataType(node[1]) == "YARN": #for bonus! YARN literal, convert special characters!
-            return convertSpecialCharacters(node[1])
-        else:
-            return node[1]
+        return node[1]
 
     #if var, find its value in the symbol table
     if kind == "VAR":
