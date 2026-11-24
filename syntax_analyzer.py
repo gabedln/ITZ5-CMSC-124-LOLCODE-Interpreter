@@ -96,8 +96,8 @@ def parseValue(tokens, i): # returns [node, index of the next token], [None, i] 
 
 # ------------------------ parsing for expressions (prefix notation) ---------------------------------------------------------------------------------
 # returns [node, index of the next token] or [None, -1] kapag may error
-# inside_all_any / inside_smoosh = para ma-detect natin yung bawal na nesting
-def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
+# nested = True kapag nasa loob na tayo ng ibang operation (SMOOSH, ALL OF, and ANY OF cannot be nested per spec)
+def parseExpression(tokens, i, nested=False):
     if i >= len(tokens):
         error("Expected an expression")
         return None, -1
@@ -118,7 +118,7 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
 
     # binary operations: <operation> <x> AN <y>
     if lexeme in two_arity:
-        left, i = parseExpression(tokens, i + 1, inside_all_any, inside_smoosh)
+        left, i = parseExpression(tokens, i + 1, True)
         if i == -1:
             return None, -1
         if i >= len(tokens): # the AN keyword is required to separate operands
@@ -127,30 +127,30 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
         if tokens[i][0] != "AN":
             error(lexeme + " requires AN between its operands")
             return None, -1
-        right, i = parseExpression(tokens, i + 1, inside_all_any, inside_smoosh)
+        right, i = parseExpression(tokens, i + 1, True)
         if i == -1:
             return None, -1
         return [lexeme, left, right], i
 
     # unary: NOT <x>
     if lexeme == "NOT":
-        operand, i = parseExpression(tokens, i + 1, inside_all_any, inside_smoosh)
+        operand, i = parseExpression(tokens, i + 1, True)
         if i == -1:
             return None, -1
         return ["NOT", operand], i
 
     # infinite arity: ALL OF / ANY OF <x> AN <y> ... MKAY
     if lexeme in infinite_arity:
-        if inside_all_any == True: # ALL OF and ANY OF cannot be nested into each other and themselves
+        if nested: # spec: all operations except SMOOSH, ALL OF, and ANY OF can be nested
             error("ALL OF and ANY OF cannot be nested")
             return None, -1
         operands = []
-        operand, i = parseExpression(tokens, i + 1, True, inside_smoosh)
+        operand, i = parseExpression(tokens, i + 1, True)
         if i == -1:
             return None, -1
         operands.append(operand)
         while i < len(tokens) and tokens[i][0] == "AN": # keep taking operands habang may AN
-            operand, i = parseExpression(tokens, i + 1, True, inside_smoosh)
+            operand, i = parseExpression(tokens, i + 1, True)
             if i == -1:
                 return None, -1
             operands.append(operand)
@@ -167,11 +167,11 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
 
     # concatenation: SMOOSH <x> AN <y> ... (walang MKAY)
     if lexeme == "SMOOSH":
-        if inside_smoosh == True: # SMOOSH cannot be nested
+        if nested: # spec: SMOOSH cannot be nested inside itself or other operations
             error("SMOOSH cannot be nested")
             return None, -1
         operands = []
-        operand, i = parseExpression(tokens, i + 1, inside_all_any, True)
+        operand, i = parseExpression(tokens, i + 1, True)
         if i == -1:
             return None, -1
         operands.append(operand)
@@ -179,7 +179,7 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
             # kapag AN YR, para sa function arguments yun, hindi para sa SMOOSH
             if i + 1 < len(tokens) and tokens[i + 1][0] == "YR":
                 break
-            operand, i = parseExpression(tokens, i + 1, inside_all_any, True)
+            operand, i = parseExpression(tokens, i + 1, True)
             if i == -1:
                 return None, -1
             operands.append(operand)
@@ -190,7 +190,7 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
 
     # explicit typecasting: MAEK <x> [A] <type>
     if lexeme == "MAEK":
-        value, i = parseExpression(tokens, i + 1, inside_all_any, inside_smoosh)
+        value, i = parseExpression(tokens, i + 1, True)
         if i == -1:
             return None, -1
         if i < len(tokens) and tokens[i][0] == "A": # since A is optional.. pag may A move to the next token
@@ -215,7 +215,7 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
         i = i + 2
         arguments = []
         if i < len(tokens) and tokens[i][0] == "YR":
-            argument, i = parseExpression(tokens, i + 1, inside_all_any, inside_smoosh)
+            argument, i = parseExpression(tokens, i + 1)
             if i == -1:
                 return None, -1
             arguments.append(argument)
@@ -226,7 +226,7 @@ def parseExpression(tokens, i, inside_all_any=False, inside_smoosh=False):
                 if tokens[i + 1][0] != "YR":
                     error("Function arguments must be separated by AN YR")
                     return None, -1
-                argument, i = parseExpression(tokens, i + 2, inside_all_any, inside_smoosh)
+                argument, i = parseExpression(tokens, i + 2)
                 if i == -1:
                     return None, -1
                 arguments.append(argument)
